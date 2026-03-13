@@ -16,6 +16,20 @@
 	let showDifficultyModal = $state(false);
 	let showVictoryModal = $state(false);
 
+	// 拖拽状态
+	let dragState = $state<{
+		isDragging: boolean;
+		fromCol: number;
+		startCardIndex: number;
+		cards: Card[];
+		element: HTMLElement | null;
+		offsetX: number;
+		offsetY: number;
+	} | null>(null);
+	let dropTargetCol = $state<number | null>(null);
+	let dropValid = $state(true);
+	let columnElements: HTMLElement[] = [];
+
 	const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
 
 	const difficultyOptions = [
@@ -249,7 +263,7 @@
 	}
 
 	async function handleCardClick(colIndex: number, cardIndex: number) {
-		if (!gameState || isLoading) return;
+		if (!gameState || isLoading || dragState?.isDragging) return;
 
 		const column = gameState.columns[colIndex];
 		const card = column[cardIndex];
@@ -277,36 +291,219 @@
 		} else if (selectedCard.colIndex === colIndex && selectedCard.cardIndex === cardIndex) {
 			selectedCard = null;
 		} else {
-			const movingCardsCount = gameState.columns[selectedCard.colIndex].length - selectedCard.cardIndex;
-			const previousCompleted = gameState.completed;
-			const result = await invoke<GameState | null>('move_cards', {
-				from_col: selectedCard.colIndex,
-				start_idx: selectedCard.cardIndex,
-				to_col: colIndex
-			});
-			if (result) {
-				gameState = result;
-
-				if (movingCardsCount === 1) {
-					soundManager.play('move');
-				} else {
-					soundManager.play('slide');
-				}
-
-				if (result.completed > previousCompleted) {
-					soundManager.play('complete');
-				}
-
-				if (result.completed === 8) {
-					soundManager.play('win');
-				}
-			} else {
-				soundManager.play('error');
-				shakeColumn = colIndex;
-				setTimeout(() => { shakeColumn = null; }, 500);
-			}
+			await executeMove(selectedCard.colIndex, selectedCard.cardIndex, colIndex);
 			selectedCard = null;
 		}
+	}
+
+	// 执行移动操作
+	async function executeMove(fromCol: number, startIdx: number, toCol: number) {
+		if (!gameState) return;
+
+		const movingCardsCount = gameState.columns[fromCol].length - startIdx;
+		const previousCompleted = gameState.completed;
+		const result = await invoke<GameState | null>('move_cards', {
+			from_col: fromCol,
+			start_idx: startIdx,
+			to_col: toCol
+		});
+		if (result) {
+			gameState = result;
+
+			if (movingCardsCount === 1) {
+				soundManager.play('move');
+			} else {
+				soundManager.play('slide');
+			}
+
+			if (result.completed > previousCompleted) {
+				soundManager.play('complete');
+			}
+
+			if (result.completed === 8) {
+				soundManager.play('win');
+			}
+		} else {
+			soundManager.play('error');
+			shakeColumn = toCol;
+			setTimeout(() => { shakeColumn = null; }, 500);
+		}
+	}
+
+	// 拖拽开始
+	function handleDragStart(colIndex: number, cardIndex: number, event: MouseEvent) {
+		if (!gameState || isLoading) return;
+
+		const column = gameState.columns[colIndex];
+		const cards = column.slice(cardIndex);
+
+		// 计算鼠标在卡牌上的偏移
+		const target = event.target as HTMLElement;
+		const rect = target.getBoundingClientRect();
+		const offsetX = event.clientX - rect.left;
+		const offsetY = event.clientY - rect.top;
+
+		// 创建拖拽视觉元素
+		const dragElement = createDragElement(cards);
+
+		dragState = {
+			isDragging: true,
+			fromCol: colIndex,
+			startCardIndex: cardIndex,
+			cards,
+			element: dragElement,
+			offsetX,
+			offsetY
+		};
+
+		selectedCard = null;
+		soundManager.play('click');
+
+		// 添加全局鼠标事件
+		document.addEventListener('mousemove', handleDragMove);
+		document.addEventListener('mouseup', handleDragEnd);
+	}
+
+	// 创建拖拽视觉元素
+	function createDragElement(cards: Card[]): HTMLElement {
+		const container = document.createElement('div');
+		container.className = 'drag-ghost';
+		container.style.cssText = `
+			position: fixed;
+			pointer-events: none;
+			z-index: 10000;
+			width: 85px;
+		`;
+
+		cards.forEach((card, index) => {
+			if (!card.face_up) return;
+
+			const cardEl = document.createElement('div');
+			cardEl.className = 'drag-card';
+			cardEl.style.cssText = `
+				position: absolute;
+				top: ${index * 22}px;
+				left: 0;
+				width: 85px;
+				height: 124px;
+				background: white;
+				border-radius: 8px;
+				box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+				overflow: hidden;
+			`;
+
+			// 渲染卡牌SVG
+			const suitMap: Record<string, string> = {
+				spade: 'S',
+				heart: 'H',
+				diamond: 'D',
+				club: 'C'
+			};
+
+			const getValueChar = (value: number): string => {
+				switch (value) {
+					case 1: return 'A';
+					case 11: return 'J';
+					case 12: return 'Q';
+					case 13: return 'K';
+					default: return String(value);
+				}
+			};
+
+			const cardFileName = `${getValueChar(card.value)}${suitMap[card.suit]}`;
+			const cardUrl = `/cards/${cardFileName}.svg`;
+
+			// 异步加载SVG
+			fetch(cardUrl)
+				.then(res => res.text())
+				.then(svg => {
+					cardEl.innerHTML = svg;
+					const svgEl = cardEl.querySelector('svg');
+					if (svgEl) {
+						svgEl.style.width = '100%';
+						svgEl.style.height = '100%';
+						svgEl.style.display = 'block';
+					}
+				});
+
+			container.appendChild(cardEl);
+		});
+
+		container.style.height = `${(cards.length - 1) * 22 + 124}px`;
+
+		document.body.appendChild(container);
+		return container;
+	}
+
+	// 拖拽移动
+	function handleDragMove(event: MouseEvent) {
+		if (!dragState?.isDragging || !dragState.element) return;
+
+		// 更新拖拽元素位置
+		dragState.element.style.left = `${event.clientX - dragState.offsetX}px`;
+		dragState.element.style.top = `${event.clientY - dragState.offsetY}px`;
+
+		// 检测目标列
+		const targetCol = getColumnAtPosition(event.clientX, event.clientY);
+		dropTargetCol = targetCol;
+		dropValid = targetCol >= 0 && isValidDrop(dragState.cards, targetCol);
+	}
+
+	// 获取鼠标位置下方的列
+	function getColumnAtPosition(x: number, y: number): number {
+		for (let i = 0; i < columnElements.length; i++) {
+			const col = columnElements[i];
+			if (!col) continue;
+			const rect = col.getBoundingClientRect();
+			if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	// 检查是否可以放置
+	function isValidDrop(dragCards: Card[], toCol: number): boolean {
+		if (!gameState) return false;
+		if (toCol === dragState?.fromCol) return false;
+
+		const targetColumn = gameState.columns[toCol];
+		if (targetColumn.length === 0) {
+			return true; // 空列可以放任何牌
+		}
+
+		const topCard = targetColumn[targetColumn.length - 1];
+		const firstDragCard = dragCards[0];
+
+		// 目标牌必须比拖拽的第一张牌大1
+		return topCard.value === firstDragCard.value + 1;
+	}
+
+	// 拖拽结束
+	async function handleDragEnd(event: MouseEvent) {
+		document.removeEventListener('mousemove', handleDragMove);
+		document.removeEventListener('mouseup', handleDragEnd);
+
+		if (!dragState?.isDragging) return;
+
+		// 移除拖拽元素
+		if (dragState.element) {
+			dragState.element.remove();
+		}
+
+		// 如果有有效的放置目标，执行移动
+		if (dropTargetCol !== null && dropTargetCol >= 0 && dropValid) {
+			await executeMove(dragState.fromCol, dragState.startCardIndex, dropTargetCol);
+		} else if (dropTargetCol !== null && dropTargetCol >= 0 && !dropValid) {
+			soundManager.play('error');
+			shakeColumn = dropTargetCol;
+			setTimeout(() => { shakeColumn = null; }, 500);
+		}
+
+		// 重置状态
+		dragState = null;
+		dropTargetCol = null;
+		dropValid = true;
 	}
 
 	async function handleDeal() {
@@ -529,17 +726,20 @@
 			</div>
 		{:else if gameState}
 			<!-- 10列卡牌 -->
-			<div class="columns">
-				{#each gameState.columns as column, index}
-					<Column
-						cards={column}
-						columnIndex={index}
-						selectedIndex={selectedCard?.colIndex === index ? selectedCard.cardIndex : null}
-						onCardClick={(cardIndex) => handleCardClick(index, cardIndex)}
-						shake={shakeColumn === index}
-					/>
-				{/each}
-			</div>
+            <div class="columns" bind:this={columnElements}>
+                {#each gameState.columns as column, index}
+                    <Column
+                        cards={column}
+                        columnIndex={index}
+                        selectedIndex={selectedCard?.colIndex === index ? selectedCard.cardIndex : null}
+                        onCardClick={(cardIndex) => handleCardClick(index, cardIndex)}
+                        onDragStart={(colIdx, cardIdx, evt) => handleDragStart(colIdx, cardIdx, evt)}
+                        shake={shakeColumn === index}
+                        isDropTarget={dropTargetCol === index}
+                        dropValid={dropValid}
+                    />
+                {/each}
+            </div>
 
 			<!-- 底部区域 -->
 			<div class="bottom-area">
@@ -1069,4 +1269,13 @@
 		justify-content: center;
 		gap: 16px;
 	}
+
+	/* 拖拽视觉元素 */
+ .drag-ghost {
+ position: fixed;
+ pointer-events: none;
+ z-index: 10000;
+ opacity: 0.92;
+ filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
+ }
 </style>
