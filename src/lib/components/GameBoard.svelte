@@ -388,7 +388,7 @@
 				height: 124px;
 				background: white;
 				border-radius: 8px;
-				box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 				overflow: hidden;
 			`;
 
@@ -1275,7 +1275,6 @@
  position: fixed;
  pointer-events: none;
  z-index: 10000;
- opacity: 0.92;
- filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
+ opacity: 0.95;
  }
 </style>
