@@ -310,7 +310,14 @@
 	}
 
 	async function handleDeal() {
-		if (!gameState || gameState.stock.length < 10 || isLoading) return;
+		if (!gameState || isLoading) return;
+
+		if (gameState.stock.length < 10) {
+			error = '没有足够的牌可发';
+			soundManager.play('error');
+			setTimeout(() => { error = null; }, 2000);
+			return;
+		}
 
 		if (gameState.columns.some(col => col.length === 0)) {
 			error = '发牌前，所有列都必须有牌';
@@ -325,11 +332,12 @@
 			const result = await invoke<GameState>('deal_cards');
 			if (result) {
 				gameState = result;
-				soundManager.play('flip');
+				soundManager.play('deal');
 			}
 		} catch (e) {
 			error = `发牌失败: ${e}`;
 			console.error('Failed to deal:', e);
+			setTimeout(() => { error = null; }, 2000);
 		}
 	}
 
@@ -550,12 +558,16 @@
 				<div class="stock-area">
 					<button
 						class="stock-pile"
-						disabled={!gameState.stock.length}
+						disabled={gameState.stock.length === 0}
 						onclick={handleDeal}
+						aria-label="发牌"
+						type="button"
 					>
-						{#each Array(remainingDeals) as _, i}
-							<div class="stock-card" style="left: {i * 4}px; top: {i * 3}px;"></div>
-						{/each}
+						{#if remainingDeals > 0}
+							{#each Array(Math.min(remainingDeals, 5)) as _, i}
+								<div class="stock-card" style="left: {i * 3}px; top: {i * 2}px; z-index: {i};"></div>
+							{/each}
+						{/if}
 					</button>
 					<span class="stock-label">剩余发牌: {remainingDeals} 次</span>
 				</div>
@@ -758,6 +770,8 @@
 		background: linear-gradient(135deg, #1565c0 0%, #1976d2 50%, #1565c0 100%);
 		border: 3px solid #0d47a1;
 		box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.4);
+		pointer-events: none;
+		cursor: pointer;
 	}
 
 	.stock-label {
