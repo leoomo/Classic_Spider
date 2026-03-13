@@ -6,6 +6,16 @@
 [![Rust](https://img.shields.io/badge/Rust-1.75+-orange?logo=rust)](https://www.rust-lang.org/)
 [![Svelte](https://img.shields.io/badge/Svelte-5-ff3e00?logo=svelte)](https://svelte.dev/)
 
+## 📸 游戏截图
+
+<p align="center">
+  <img src="docs/screenshot-gameplay.png" alt="游戏界面" width="600">
+</p>
+
+<p align="center">
+  <em>高质量矢量扑克牌渲染 - 任意缩放都清晰锐利</em>
+</p>
+
 ---
 
 ## ✨ 特性
