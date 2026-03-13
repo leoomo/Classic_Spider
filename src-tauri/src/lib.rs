@@ -1,5 +1,6 @@
 mod commands;
 mod game;
+mod storage;
 
 use commands::game::GameManager;
 use tauri_plugin_opener::init;
@@ -14,7 +15,15 @@ pub fn run() {
             commands::game::get_state,
             commands::game::move_cards,
             commands::game::deal_cards,
-            commands::game::get_hint
+            commands::game::get_hint,
+            commands::game::save_game,
+            commands::game::load_game,
+            commands::game::has_saved_game,
+            commands::game::delete_saved_game,
+            commands::game::undo,
+            commands::game::redo,
+            commands::game::can_undo,
+            commands::game::can_redo
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

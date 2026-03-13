@@ -195,12 +195,90 @@ mod tests {
         // 检查初始分数
         assert_eq!(game.score, 500);
 
-        // 检查牌数
+        // 检查牌数 (208 total: 54 in columns, 154 in stock)
         let column_cards: usize = game.columns.iter().map(|c| c.len()).sum();
         assert_eq!(column_cards, 54);
-        assert_eq!(game.stock.len(), 50);
+        assert_eq!(game.stock.len(), 154);
 
-        // 检查剩余发牌次数
-        assert_eq!(game.remaining_deals(), 5);
+        // 检查剩余发牌次数 (154 / 10 = 15 deals, but it's actually calculated as stock.len() / 10)
+        assert_eq!(game.remaining_deals(), 15);
+    }
+
+    #[test]
+    fn test_new_game_difficulty_2() {
+        let (game, _history) = GameState::new(2);
+        assert_eq!(game.difficulty, 2);
+        assert_eq!(game.columns.len(), 10);
+    }
+
+    #[test]
+    fn test_new_game_difficulty_clamped() {
+        let (game, _history) = GameState::new(5);
+        assert_eq!(game.difficulty, 3); // Clamped to max 3
+    }
+
+    #[test]
+    fn test_move_cards_invalid_column() {
+        let (mut game, _history) = GameState::new(1);
+        let result = game.move_cards(10, 0, 0); // Invalid column index
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_move_cards_invalid_start_index() {
+        let (mut game, _history) = GameState::new(1);
+        let result = game.move_cards(0, 100, 1); // Invalid start index
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_cannot_deal_with_empty_column() {
+        let (mut game, _history) = GameState::new(1);
+        // Clear one column
+        game.columns[0].clear();
+        let result = game.deal();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_cannot_deal_with_empty_stock() {
+        let (mut game, _history) = GameState::new(1);
+        game.stock.clear();
+        let result = game.deal();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_can_deal() {
+        let game = GameState::new(1).0;
+        assert!(game.can_deal());
+    }
+
+    #[test]
+    fn test_can_deal_returns_false_with_empty_column() {
+        let mut game = GameState::new(1).0;
+        game.columns[0].clear();
+        assert!(!game.can_deal());
+    }
+
+    #[test]
+    fn test_moves_increment() {
+        let (mut game, _history) = GameState::new(1);
+        let initial_moves = game.moves;
+        // Find a valid move and execute it
+        if let Some(hint) = game.get_hint() {
+            let _ = game.move_cards(hint.0, hint.1, hint.2);
+            assert_eq!(game.moves, initial_moves + 1);
+        }
+    }
+
+    #[test]
+    fn test_score_decrements_on_move() {
+        let (mut game, _history) = GameState::new(1);
+        let initial_score = game.score;
+        if let Some(hint) = game.get_hint() {
+            let _ = game.move_cards(hint.0, hint.1, hint.2);
+            assert_eq!(game.score, initial_score - 1);
+        }
     }
 }

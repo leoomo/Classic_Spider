@@ -67,3 +67,94 @@ impl History {
         self.current_index < self.states.len() - 1
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_test_state(score: i32) -> GameState {
+        let mut state = GameState::default();
+        state.score = score;
+        state
+    }
+
+    #[test]
+    fn test_new_history() {
+        let state = create_test_state(500);
+        let history = History::new(state);
+        assert!(!history.can_undo());
+        assert!(!history.can_redo());
+    }
+
+    #[test]
+    fn test_push_and_undo() {
+        let state1 = create_test_state(500);
+        let mut history = History::new(state1);
+
+        let state2 = create_test_state(499);
+        history.push(state2);
+
+        assert!(history.can_undo());
+        assert!(!history.can_redo());
+
+        let undone = history.undo();
+        assert!(undone.is_some());
+        assert_eq!(undone.unwrap().score, 500);
+        assert!(!history.can_undo());
+        assert!(history.can_redo());
+    }
+
+    #[test]
+    fn test_redo() {
+        let state1 = create_test_state(500);
+        let mut history = History::new(state1);
+
+        let state2 = create_test_state(499);
+        history.push(state2);
+
+        history.undo();
+        assert!(history.can_redo());
+
+        let redone = history.redo();
+        assert!(redone.is_some());
+        assert_eq!(redone.unwrap().score, 499);
+        assert!(!history.can_redo());
+    }
+
+    #[test]
+    fn test_push_clears_redo_stack() {
+        let state1 = create_test_state(500);
+        let mut history = History::new(state1);
+
+        let state2 = create_test_state(499);
+        history.push(state2);
+
+        let state3 = create_test_state(498);
+        history.push(state3);
+
+        history.undo(); // Back to state2
+        history.undo(); // Back to state1
+
+        let state4 = create_test_state(497);
+        history.push(state4);
+
+        // After push, redo stack should be cleared
+        assert!(!history.can_redo());
+        assert_eq!(history.states.len(), 2);
+    }
+
+    #[test]
+    fn test_max_size() {
+        let state = create_test_state(500);
+        let mut history = History::new(state);
+
+        // Push more than max_size states
+        for i in 1..60 {
+            let s = create_test_state(500 - i);
+            history.push(s);
+        }
+
+        // Should not exceed max_size
+        assert!(history.states.len() <= history.max_size);
+    }
+}

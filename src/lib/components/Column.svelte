@@ -7,21 +7,22 @@
 		columnIndex: number;
 		selectedIndex: number | null;
 		onCardClick: (cardIndex: number) => void;
+		shake?: boolean; // 🃏 抖动动画
 	}
 
-	let { cards = [], columnIndex, selectedIndex, onCardClick }: Props = $props();
+	let { cards = [], columnIndex, selectedIndex, onCardClick, shake = false }: Props = $props();
 
 	// 计算每张牌的偏移位置（面朝上的卡牌间距更大）
 	function getCardOffset(index: number): number {
 		let offset = 0;
 		for (let i = 0; i < index; i++) {
-			offset += cards[i].face_up ? 40 : 18;
+			offset += cards[i].face_up ? 22 : 8;
 		}
 		return offset;
 	}
 </script>
 
-<div class="column" role="list" aria-label="第 {columnIndex + 1} 列">
+<div class="column" role="list" aria-label="第 {columnIndex + 1} 列" class:shake>
 	{#each cards as card, idx (card.id)}
 		<Card
 			{card}
@@ -41,27 +42,43 @@
 <style>
 	.column {
 		position: relative;
-		min-height: 600px;
-		width: 140px;
-		padding: 8px;
+		min-height: 400px;
+		width: 95px;
+		padding: 4px;
 		flex-shrink: 0;
 	}
 
 	.empty-slot {
-		width: 120px;
-		height: 168px;
-		border: 3px dashed rgba(255, 255, 255, 0.5);
-		border-radius: 10px;
+		width: 85px;
+		height: 120px;
+		border: 2px dashed rgba(255, 255, 255, 0.5);
+		border-radius: 8px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		margin: 8px;
+		margin: 4px;
 		background: rgba(0, 0, 0, 0.15);
 	}
 
 	.placeholder {
-		font-size: 56px;
+		font-size: 40px;
 		color: rgba(255, 255, 255, 0.4);
 		font-weight: bold;
+	}
+
+	/* 🃏 抖动动画 - 错误反馈 */
+	.shake {
+		animation: shake 0.5s ease-in-out;
+	}
+
+	@keyframes shake {
+		0%, 100% { transform: translateX(0); }
+		10%, 30% { transform: translateX(-8px); }
+		20%, 40% { transform: translateX(8px); }
+		30%, 50% { transform: translateX(-4px); }
+		40%, 60% { transform: translateX(4px); }
+		70%, 80% { transform: translateX(2px); }
+		80%, 90% { transform: translateX(-2px); }
+		90%, 100% { transform: translateX(0); }
 	}
 </style>

@@ -56,9 +56,24 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_generate_deck() {
+    fn test_generate_deck_difficulty_1() {
+        // Difficulty 1: 8 spade decks × 2 × 13 = 208 cards
         let deck = generate_deck(1);
-        assert_eq!(deck.len(), 104);
+        assert_eq!(deck.len(), 208);
+    }
+
+    #[test]
+    fn test_generate_deck_difficulty_2() {
+        // Difficulty 2: 8 mixed decks × 2 × 13 = 208 cards
+        let deck = generate_deck(2);
+        assert_eq!(deck.len(), 208);
+    }
+
+    #[test]
+    fn test_generate_deck_difficulty_3() {
+        // Difficulty 3: 8 mixed decks × 2 × 13 = 208 cards
+        let deck = generate_deck(3);
+        assert_eq!(deck.len(), 208);
     }
 
     #[test]
@@ -69,10 +84,10 @@ mod tests {
         // 检查列数
         assert_eq!(columns.len(), 10);
 
-        // 检查总牌数
+        // 检查总牌数 (54 in columns, rest in stock)
         let column_cards: usize = columns.iter().map(|c| c.len()).sum();
         assert_eq!(column_cards, 54);
-        assert_eq!(stock.len(), 50);
+        assert_eq!(stock.len(), 154); // 208 - 54 = 154
 
         // 检查前4列有6张，后6列有5张
         for (i, col) in columns.iter().enumerate() {

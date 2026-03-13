@@ -59,9 +59,9 @@
 <style>
 	.card {
 		position: absolute;
-		width: 120px;
-		height: 168px;
-		border-radius: 10px;
+		width: 85px;
+		height: 120px;
+		border-radius: 8px;
 		cursor: pointer;
 		transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
 		user-select: none;
@@ -71,13 +71,13 @@
 		width: 100%;
 		height: 100%;
 		background: white;
-		border-radius: 10px;
+		border-radius: 8px;
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
-		padding: 10px;
+		padding: 6px;
 		border: 2px solid #bbb;
-		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 	}
 
 	.card.red .card-inner {
@@ -89,35 +89,35 @@
 	}
 
 	.card .value {
-		font-size: 32px;
+		font-size: 22px;
 		font-weight: bold;
 		line-height: 1;
 	}
 
 	.card .suit {
-		font-size: 48px;
+		font-size: 32px;
 		line-height: 1;
 		align-self: flex-end;
 	}
 
 	.card.selected {
-		transform: translateY(-12px);
-		box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4), 0 0 0 3px rgba(255, 215, 0, 0.6);
+		transform: translateY(-8px);
+		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), 0 0 0 3px rgba(255, 215, 0, 0.6);
 	}
 
 	.card:hover:not(.selected) {
-		box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 		transform: scale(1.02);
 	}
 
 	.card.back {
 		position: absolute;
-		width: 120px;
-		height: 168px;
-		border-radius: 10px;
+		width: 85px;
+		height: 120px;
+		border-radius: 8px;
 		background: linear-gradient(135deg, #1565c0 0%, #1976d2 50%, #1565c0 100%);
-		border: 4px solid #0d47a1;
-		box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3);
+		border: 3px solid #0d47a1;
+		box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3);
 		cursor: default;
 	}
 
@@ -127,11 +127,11 @@
 		background-image: repeating-linear-gradient(
 			45deg,
 			#0d47a1 0px,
-			#0d47a1 3px,
-			transparent 3px,
-			transparent 12px
+			#0d47a1 2px,
+			transparent 2px,
+			transparent 8px
 		);
 		opacity: 0.3;
-		border-radius: 6px;
+		border-radius: 5px;
 	}
 </style>

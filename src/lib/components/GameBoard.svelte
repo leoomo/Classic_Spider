@@ -9,9 +9,20 @@
 	let isLoading = $state(true);
 	let error = $state<string | null>(null);
 	let isMuted = $state(false);
+	let shakeColumn = $state<number | null>(null);
+	let showRestorePrompt = $state(false);
+	let canUndoState = $state(false);
+	let canRedoState = $state(false);
+	let showDifficultyModal = $state(false);
+	let showVictoryModal = $state(false);
 
-	// Check if running in Tauri or browser
 	const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
+
+	const difficultyOptions = [
+		{ level: 1, name: '简单', suits: '1种花色', description: '适合新手' },
+		{ level: 2, name: '中等', suits: '2种花色', description: '有一定挑战' },
+		{ level: 3, name: '困难', suits: '4种花色', description: '高手挑战' }
+	];
 
 	async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
 		if (isTauri) {
@@ -22,7 +33,6 @@
 		}
 	}
 
-	// Mock implementation for browser testing
 	function invokeMock<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
 		console.log(`[Mock] invoke('${cmd}')`, args);
 
@@ -43,6 +53,12 @@
 				const result = mockDealCards();
 				return Promise.resolve(result as T);
 			}
+			case 'can_undo':
+				return Promise.resolve(false as T);
+			case 'can_redo':
+				return Promise.resolve(false as T);
+			case 'has_saved_game':
+				return Promise.resolve(false as T);
 			default:
 				return Promise.reject(`Unknown command: ${cmd}`);
 		}
@@ -139,48 +155,54 @@
 		if (newTargetColumn.length >= 13) {
 			const last13 = newTargetColumn.slice(-13);
 			let isComplete = true;
-			const suit = last13[0].suit;
 			for (let i = 0; i < 13; i++) {
-				if (last13[i].suit !== suit || last13[i].value !== 13 - i || !last13[i].face_up) {
+				const card = last13[i];
+				if (card.suit !== 'spade' || card.value !== 13 - i) {
 					isComplete = false;
 					break;
 				}
 			}
 			if (isComplete) {
-				newColumns[toCol] = newTargetColumn.slice(0, -13);
-				completed++;
-				soundManager.play('complete');
+				newColumns[toCol] = newColumns[toCol].slice(0, -13);
+				completed += 1;
 			}
 		}
 
 		return {
 			...gameState,
 			columns: newColumns,
+			stock: gameState.stock,
 			completed,
+			score: Math.max(0, gameState.score - 1),
 			moves: gameState.moves + 1,
-			score: Math.max(0, gameState.score - 1)
+			difficulty: gameState.difficulty,
+			game_over: false,
+			won: completed === 8
 		};
 	}
 
 	function mockDealCards(): GameState | null {
-		if (!gameState || gameState.stock.length < 10) return null;
+		if (!gameState) return null;
 
 		if (gameState.columns.some(col => col.length === 0)) {
 			return null;
 		}
 
 		const newStock = [...gameState.stock];
-		const newColumns = gameState.columns.map((col) => {
-			const card = { ...newStock.shift()!, face_up: true };
-			return [...col, card];
-		});
+		const newColumns = gameState.columns.map(col => [...col]);
+
+		for (let col of newColumns) {
+			if (newStock.length === 0) break;
+			const card = newStock.pop()!;
+			card.face_up = true;
+			col.push(card);
+		}
 
 		return {
 			...gameState,
 			columns: newColumns,
 			stock: newStock,
-			moves: gameState.moves + 1,
-			score: Math.max(0, gameState.score - 1)
+			moves: gameState.moves + 1
 		};
 	}
 
@@ -188,12 +210,39 @@
 		try {
 			isLoading = true;
 			error = null;
+			showDifficultyModal = false;
+			showVictoryModal = false;
+			soundManager.play('shuffle');
 			gameState = await invoke<GameState>('new_game', { difficulty });
 			selectedCard = null;
-			soundManager.play('deal');
+			showRestorePrompt = false;
 		} catch (e) {
 			error = `加载失败: ${e}`;
 			console.error('Failed to create game:', e);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	function openNewGameModal() {
+		showDifficultyModal = true;
+	}
+
+	function selectDifficulty(level: number) {
+		initGame(level);
+	}
+
+	async function restoreGame() {
+		try {
+			isLoading = true;
+			error = null;
+			gameState = await invoke<GameState>('load_game');
+			selectedCard = null;
+			showRestorePrompt = false;
+		} catch (e) {
+			error = `恢复失败: ${e}`;
+			console.error('Failed to load game:', e);
+			initGame(1);
 		} finally {
 			isLoading = false;
 		}
@@ -222,10 +271,14 @@
 				soundManager.play('click');
 			} else {
 				soundManager.play('error');
+				shakeColumn = colIndex;
+				setTimeout(() => { shakeColumn = null; }, 500);
 			}
 		} else if (selectedCard.colIndex === colIndex && selectedCard.cardIndex === cardIndex) {
 			selectedCard = null;
 		} else {
+			const movingCardsCount = gameState.columns[selectedCard.colIndex].length - selectedCard.cardIndex;
+			const previousCompleted = gameState.completed;
 			const result = await invoke<GameState | null>('move_cards', {
 				from_col: selectedCard.colIndex,
 				start_idx: selectedCard.cardIndex,
@@ -233,14 +286,24 @@
 			});
 			if (result) {
 				gameState = result;
-				soundManager.play('move');
 
-				// 检查是否胜利
+				if (movingCardsCount === 1) {
+					soundManager.play('move');
+				} else {
+					soundManager.play('slide');
+				}
+
+				if (result.completed > previousCompleted) {
+					soundManager.play('complete');
+				}
+
 				if (result.completed === 8) {
 					soundManager.play('win');
 				}
 			} else {
 				soundManager.play('error');
+				shakeColumn = colIndex;
+				setTimeout(() => { shakeColumn = null; }, 500);
 			}
 			selectedCard = null;
 		}
@@ -252,6 +315,8 @@
 		if (gameState.columns.some(col => col.length === 0)) {
 			error = '发牌前，所有列都必须有牌';
 			soundManager.play('error');
+			shakeColumn = -1;
+			setTimeout(() => { shakeColumn = null; }, 500);
 			setTimeout(() => { error = null; }, 2000);
 			return;
 		}
@@ -260,7 +325,7 @@
 			const result = await invoke<GameState>('deal_cards');
 			if (result) {
 				gameState = result;
-				soundManager.play('deal');
+				soundManager.play('flip');
 			}
 		} catch (e) {
 			error = `发牌失败: ${e}`;
@@ -272,12 +337,59 @@
 		isMuted = soundManager.toggleMute();
 	}
 
-	onMount(() => {
+	async function handleUndo() {
+		if (!canUndoState || isLoading) return;
+		try {
+			gameState = await invoke<GameState>('undo');
+			selectedCard = null;
+			soundManager.play('flip');
+		} catch (e) {
+			console.error('Undo failed:', e);
+		}
+	}
+
+	async function handleRedo() {
+		if (!canRedoState || isLoading) return;
+		try {
+			gameState = await invoke<GameState>('redo');
+			selectedCard = null;
+			soundManager.play('flip');
+		} catch (e) {
+			console.error('Redo failed:', e);
+		}
+	}
+
+	onMount(async () => {
 		soundManager.preload();
-		initGame(1);
+		try {
+			const hasSave = await invoke<boolean>('has_saved_game');
+			if (hasSave) {
+				showRestorePrompt = true;
+			} else {
+				initGame(1);
+			}
+		} catch (e) {
+			console.error('Failed to check saved game:', e);
+			initGame(1);
+		}
 	});
 
 	let remainingDeals = $derived(gameState ? Math.floor(gameState.stock.length / 10) : 0);
+
+	$effect(() => {
+		if (gameState && !isLoading) {
+			invoke<boolean>('can_undo').then((v) => (canUndoState = v)).catch(() => {});
+			invoke<boolean>('can_redo').then((v) => (canRedoState = v)).catch(() => {});
+		}
+	});
+
+	// Victory detection
+	$effect(() => {
+		if (gameState?.completed === 8 && !showVictoryModal) {
+			showVictoryModal = true;
+			soundManager.play('win');
+		}
+	});
 </script>
 
 <div class="game-container">
@@ -305,8 +417,21 @@
 					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
 				{/if}
 			</button>
-			<button class="btn primary" onclick={() => initGame(1)}>
-				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+			<!-- 撤销按钮 -->
+			<button class="btn undo-btn" onclick={handleUndo} disabled={!canUndoState || isLoading} title="撤销">
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+				</svg>
+			</button>
+			<!-- 重做按钮 -->
+			<button class="btn redo-btn" onclick={handleRedo} disabled={!canRedoState || isLoading} title="重做">
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/>
+				</svg>
+			</button>
+			<!-- 新游戏按钮 -->
+			<button class="btn primary" onclick={openNewGameModal}>
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
 				新游戏
 			</button>
 		</div>
@@ -314,7 +439,77 @@
 
 	<!-- 主游戏区域 -->
 	<main class="game-board">
-		{#if isLoading}
+		{#if showRestorePrompt}
+			<!-- 📋 存档恢复提示 -->
+			<div class="restore-overlay">
+				<div class="restore-modal">
+					<h2 class="restore-title">发现存档</h2>
+					<p class="restore-text">检测到上次未完成的游戏，是否继续？</p>
+					<div class="restore-buttons">
+						<button class="btn primary" onclick={restoreGame}>
+							继续游戏
+						</button>
+						<button class="btn" onclick={() => showDifficultyModal = true}>
+							新游戏
+						</button>
+					</div>
+				</div>
+			</div>
+		{/if}
+
+		<!-- 难度选择模态框 -->
+		{#if showDifficultyModal}
+			<div class="modal-overlay" onclick={() => showDifficultyModal = false}>
+				<div class="modal difficulty-modal" onclick={(e) => e.stopPropagation()}>
+					<h2 class="modal-title">选择难度</h2>
+					<div class="difficulty-options">
+						{#each difficultyOptions as option}
+							<button
+								class="difficulty-option"
+								class:selected={gameState?.difficulty === option.level}
+								onclick={() => selectDifficulty(option.level)}
+							>
+								<span class="difficulty-name">{option.name}</span>
+								<span class="difficulty-suits">{option.suits}</span>
+								<span class="difficulty-desc">{option.description}</span>
+							</button>
+						{/each}
+					</div>
+					<button class="btn cancel-btn" onclick={() => showDifficultyModal = false}>
+						取消
+					</button>
+				</div>
+			</div>
+		{/if}
+
+		<!-- 胜利庆祝模态框 -->
+		{#if showVictoryModal}
+			<div class="victory-overlay">
+				<div class="confetti-container">
+					{#each Array(50) as _, i}
+						<div class="confetti" style="--delay: {Math.random() * 3}s; --x: {Math.random() * 100}vw; --rotate: {Math.random() * 720 - 360}deg;"></div>
+					{/each}
+				</div>
+				<div class="victory-modal">
+					<h2 class="victory-title">🎉 恭喜通关！</h2>
+					<div class="victory-stats">
+						<div class="stat">
+							<span class="stat-label">最终得分</span>
+							<span class="stat-value">{gameState?.score}</span>
+						</div>
+						<div class="stat">
+							<span class="stat-label">总步数</span>
+							<span class="stat-value">{gameState?.moves}</span>
+						</div>
+					</div>
+					<div class="victory-buttons">
+						<button class="btn primary" onclick={openNewGameModal}>
+							再来一局
+						</button>
+					</div>
+				</div>
+			</div>
+		{:else if isLoading}
 			<div class="loading">
 				<div class="spinner"></div>
 				<span>加载中...</span>
@@ -333,6 +528,7 @@
 						columnIndex={index}
 						selectedIndex={selectedCard?.colIndex === index ? selectedCard.cardIndex : null}
 						onCardClick={(cardIndex) => handleCardClick(index, cardIndex)}
+						shake={shakeColumn === index}
 					/>
 				{/each}
 			</div>
@@ -382,22 +578,23 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 16px 32px;
+		padding: 12px 24px;
 		background: rgba(0, 0, 0, 0.35);
 		backdrop-filter: blur(12px);
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		flex-shrink: 0;
 	}
 
 	.game-info {
 		display: flex;
-		gap: 48px;
+		gap: 40px;
 	}
 
 	.info-item {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 6px;
+		gap: 4px;
 	}
 
 	.label {
@@ -409,89 +606,103 @@
 	}
 
 	.value {
-		font-size: 40px;
+		font-size: 36px;
 		font-weight: bold;
 	}
 
 	.actions {
 		display: flex;
-		gap: 16px;
+		gap: 12px;
 	}
 
 	.btn {
 		display: flex;
 		align-items: center;
-		gap: 10px;
-		padding: 16px 32px;
+		gap: 8px;
+		padding: 14px 24px;
 		border: none;
-		border-radius: 12px;
+		border-radius: 10px;
 		background: rgba(255, 255, 255, 0.12);
 		color: white;
-		font-size: 22px;
+		font-size: 20px;
 		font-weight: 600;
 		cursor: pointer;
 		transition: all 0.25s ease-out;
 	}
 
-	.btn:hover {
+	.btn:hover:not(:disabled) {
 		background: rgba(255, 255, 255, 0.22);
-		transform: translateY(-3px);
-		box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 	}
 
-	.btn:active {
+	.btn:active:not(:disabled) {
 		transform: translateY(0);
 	}
 
 	.btn.primary {
 		background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
-		box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+		box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 	}
 
-	.btn.primary:hover {
+	.btn.primary:hover:not(:disabled) {
 		background: linear-gradient(135deg, #66bb6a 0%, #388e3c 100%);
-		box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+		box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
 	}
 
-	.mute-btn {
-		padding: 16px;
-		min-width: 56px;
+	.btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+		transform: none;
+	}
+
+	.mute-btn, .undo-btn, .redo-btn {
+		padding: 14px;
+		min-width: 52px;
 		justify-content: center;
+	}
+
+	.mute-btn svg, .undo-btn svg, .redo-btn svg {
+		width: 24px;
+		height: 24px;
 	}
 
 	.game-board {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		padding: 24px;
-		overflow: auto;
+		padding: 8px;
+		overflow: hidden;
+		min-height: 0;
 	}
 
 	.columns {
 		display: flex;
 		justify-content: center;
-		gap: 12px;
+		gap: 4px;
 		flex-wrap: nowrap;
+		flex: 1;
+		min-height: 0;
 	}
 
 	.bottom-area {
 		display: flex;
 		justify-content: space-between;
 		align-items: flex-end;
-		margin-top: auto;
-		padding-top: 24px;
+		padding-top: 8px;
+		flex-shrink: 0;
 	}
 
 	.foundation-area {
 		display: flex;
-		gap: 12px;
+		gap: 4px;
 	}
 
 	.foundation {
-		width: 80px;
-		height: 112px;
-		border: 3px solid rgba(255, 255, 255, 0.35);
-		border-radius: 10px;
+		width: 55px;
+		height: 78px;
+		border: 2px solid rgba(255, 255, 255, 0.35);
+		border-radius: 6px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -502,11 +713,11 @@
 	.foundation.filled {
 		background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
 		border-color: #4caf50;
-		box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+		box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
 	}
 
 	.check {
-		font-size: 48px;
+		font-size: 28px;
 		color: white;
 	}
 
@@ -514,15 +725,16 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 12px;
+		gap: 8px;
+		padding-bottom: 8px;
 	}
 
 	.stock-pile {
 		position: relative;
-		width: 120px;
-		height: 168px;
+		width: 85px;
+		height: 120px;
 		border: none;
-		border-radius: 10px;
+		border-radius: 8px;
 		background: transparent;
 		cursor: pointer;
 		padding: 0;
@@ -540,18 +752,19 @@
 
 	.stock-card {
 		position: absolute;
-		width: 120px;
-		height: 168px;
-		border-radius: 10px;
+		width: 85px;
+		height: 120px;
+		border-radius: 8px;
 		background: linear-gradient(135deg, #1565c0 0%, #1976d2 50%, #1565c0 100%);
-		border: 4px solid #0d47a1;
-		box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.4);
+		border: 3px solid #0d47a1;
+		box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.4);
 	}
 
 	.stock-label {
-		font-size: 20px;
-		color: rgba(255, 255, 255, 0.8);
+		font-size: 18px;
+		color: rgba(255, 255, 255, 0.9);
 		font-weight: 500;
+		white-space: nowrap;
 	}
 
 	.loading, .error {
@@ -574,10 +787,272 @@
 	}
 
 	@keyframes spin {
-		to { transform: rotate(360deg); }
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	.error {
 		color: #ef5350;
+	}
+
+	/* 存档恢复提示框 */
+	.restore-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.75);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 1000;
+		backdrop-filter: blur(8px);
+	}
+
+	.restore-modal {
+		background: linear-gradient(135deg, #2d5a3f 0%, #1a472a 100%);
+		border-radius: 20px;
+		padding: 40px 50px;
+		text-align: center;
+		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+		max-width: 420px;
+		animation: modal-appear 0.3s ease-out;
+	}
+
+	@keyframes modal-appear {
+		from {
+			opacity: 0;
+			transform: scale(0.9);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
+	}
+
+	.restore-title {
+		font-size: 36px;
+		font-weight: bold;
+		color: white;
+		margin-bottom: 16px;
+	}
+
+	.restore-text {
+		font-size: 22px;
+		color: rgba(255, 255, 255, 0.9);
+		margin-bottom: 32px;
+	}
+
+	.restore-buttons {
+		display: flex;
+		gap: 16px;
+		justify-content: center;
+	}
+
+	/* 难度选择模态框 */
+	.modal-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.75);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 1000;
+		backdrop-filter: blur(8px);
+	}
+
+	.modal {
+		background: linear-gradient(135deg, #2d5a3f 0%, #1a472a 100%);
+		border-radius: 20px;
+		padding: 40px 50px;
+		text-align: center;
+		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+		animation: modal-appear 0.3s ease-out;
+	}
+
+	.modal-title {
+		font-size: 36px;
+		font-weight: bold;
+		color: white;
+		margin-bottom: 32px;
+	}
+
+	.difficulty-options {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		margin-bottom: 24px;
+	}
+
+	.difficulty-option {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 8px;
+		padding: 24px 48px;
+		border: 3px solid rgba(255, 255, 255, 0.3);
+		border-radius: 16px;
+		background: rgba(255, 255, 255, 0.1);
+		color: white;
+		cursor: pointer;
+		transition: all 0.25s ease;
+	}
+
+	.difficulty-option:hover {
+		background: rgba(255, 255, 255, 0.2);
+		border-color: rgba(255, 255, 255, 0.5);
+		transform: translateY(-4px);
+		box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+	}
+
+	.difficulty-option.selected {
+		border-color: #4caf50;
+		background: rgba(76, 175, 80, 0.2);
+	}
+
+	.difficulty-name {
+		font-size: 28px;
+		font-weight: bold;
+	}
+
+	.difficulty-suits {
+		font-size: 20px;
+		color: rgba(255, 255, 255, 0.8);
+	}
+
+	.difficulty-desc {
+		font-size: 16px;
+		color: rgba(255, 255, 255, 0.6);
+	}
+
+	.cancel-btn {
+		background: rgba(255, 255, 255, 0.1);
+		padding: 12px 32px;
+		font-size: 18px;
+	}
+
+	/* 胜利庆祝 */
+	.victory-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.8);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 2000;
+	}
+
+	.confetti-container {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+		overflow: hidden;
+	}
+
+	.confetti {
+		position: absolute;
+		width: 12px;
+		height: 12px;
+		background: var(--color, #f0f);
+		left: var(--x);
+		top: -20px;
+		animation: confetti-fall 3s ease-in-out var(--delay) infinite;
+		transform: rotate(var(--rotate));
+	}
+
+	.confetti:nth-child(4n+1) { --color: #ff6b6b; }
+	.confetti:nth-child(4n+2) { --color: #4ecdc4; }
+	.confetti:nth-child(4n+3) { --color: #ffe66d; }
+	.confetti:nth-child(4n+4) { --color: #95e1d3; }
+
+	@keyframes confetti-fall {
+		0% {
+			transform: translateY(0) rotate(0deg);
+			opacity: 1;
+		}
+		100% {
+			transform: translateY(100vh) rotate(720deg);
+			opacity: 0;
+		}
+	}
+
+	.victory-modal {
+		background: linear-gradient(135deg, #2d5a3f 0%, #1a472a 100%);
+		border-radius: 24px;
+		padding: 48px 64px;
+		text-align: center;
+		box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+		animation: victory-appear 0.5s ease-out;
+		z-index: 2001;
+	}
+
+	@keyframes victory-appear {
+		0% {
+			opacity: 0;
+			transform: scale(0.5) rotate(-10deg);
+		}
+		50% {
+			transform: scale(1.1) rotate(2deg);
+		}
+		100% {
+			opacity: 1;
+			transform: scale(1) rotate(0deg);
+		}
+	}
+
+	.victory-title {
+		font-size: 48px;
+		font-weight: bold;
+		color: #ffe66d;
+		margin-bottom: 32px;
+		text-shadow: 0 4px 20px rgba(255, 230, 109, 0.5);
+		animation: pulse 1s ease-in-out infinite;
+	}
+
+	@keyframes pulse {
+		0%, 100% { transform: scale(1); }
+		50% { transform: scale(1.05); }
+	}
+
+	.victory-stats {
+		display: flex;
+		justify-content: center;
+		gap: 48px;
+		margin-bottom: 40px;
+	}
+
+	.stat {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.stat-label {
+		font-size: 20px;
+		color: rgba(255, 255, 255, 0.7);
+	}
+
+	.stat-value {
+		font-size: 48px;
+		font-weight: bold;
+		color: #4ecdc4;
+	}
+
+	.victory-buttons {
+		display: flex;
+		justify-content: center;
+		gap: 16px;
 	}
 </style>
