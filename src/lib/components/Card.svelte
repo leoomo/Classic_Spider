@@ -3,12 +3,12 @@
 
 	interface Props {
 		card: CardType;
-		index?: number;
+		offset?: number;
 		selected?: boolean;
 		onclick?: () => void;
 	}
 
-	let { card, index = 0, selected = false, onclick }: Props = $props();
+	let { card, offset = 0, selected = false, onclick }: Props = $props();
 
 	const suitSymbols: Record<string, string> = {
 		spade: '♠',
@@ -36,7 +36,7 @@
 		class="card"
 		class:selected
 		class:red={isRed}
-		style="top: {index * 25}px;"
+		style="top: {offset}px;"
 		role="listitem"
 		tabindex="0"
 		{onclick}
@@ -49,7 +49,7 @@
 {:else}
 	<div
 		class="card back"
-		style="top: {index * 12}px;"
+		style="top: {offset}px;"
 		role="listitem"
 	>
 		<div class="card-back-pattern"></div>
@@ -59,11 +59,11 @@
 <style>
 	.card {
 		position: absolute;
-		width: 90px;
-		height: 126px;
-		border-radius: 8px;
+		width: 120px;
+		height: 168px;
+		border-radius: 10px;
 		cursor: pointer;
-		transition: transform 0.15s ease, box-shadow 0.15s ease;
+		transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
 		user-select: none;
 	}
 
@@ -71,17 +71,17 @@
 		width: 100%;
 		height: 100%;
 		background: white;
-		border-radius: 8px;
+		border-radius: 10px;
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
-		padding: 6px;
-		border: 1px solid #ccc;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+		padding: 10px;
+		border: 2px solid #bbb;
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 	}
 
 	.card.red .card-inner {
-		color: #d32f2f;
+		color: #c41e3a;
 	}
 
 	.card:not(.red) .card-inner {
@@ -89,34 +89,35 @@
 	}
 
 	.card .value {
-		font-size: 20px;
+		font-size: 32px;
 		font-weight: bold;
 		line-height: 1;
 	}
 
 	.card .suit {
-		font-size: 24px;
+		font-size: 48px;
 		line-height: 1;
 		align-self: flex-end;
 	}
 
 	.card.selected {
-		transform: translateY(-8px);
-		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+		transform: translateY(-12px);
+		box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4), 0 0 0 3px rgba(255, 215, 0, 0.6);
 	}
 
 	.card:hover:not(.selected) {
-		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+		box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+		transform: scale(1.02);
 	}
 
 	.card.back {
 		position: absolute;
-		width: 90px;
-		height: 126px;
-		border-radius: 8px;
+		width: 120px;
+		height: 168px;
+		border-radius: 10px;
 		background: linear-gradient(135deg, #1565c0 0%, #1976d2 50%, #1565c0 100%);
-		border: 3px solid #0d47a1;
-		box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+		border: 4px solid #0d47a1;
+		box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3);
 		cursor: default;
 	}
 
@@ -126,10 +127,11 @@
 		background-image: repeating-linear-gradient(
 			45deg,
 			#0d47a1 0px,
-			#0d47a1 2px,
-			transparent 2px,
-			transparent 10px
+			#0d47a1 3px,
+			transparent 3px,
+			transparent 12px
 		);
 		opacity: 0.3;
+		border-radius: 6px;
 	}
 </style>
