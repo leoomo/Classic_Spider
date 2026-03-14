@@ -8,13 +8,11 @@ pub fn generate_deck(difficulty: u8) -> Vec<Card> {
     let suits = Suit::for_difficulty(difficulty);
     let mut id_counter = 0u32;
 
-    // 每种花色配置生成 2 副牌（每种花色 26 张，共 104 张）
+    // 每种花色配置生成 1 副牌（8个花色配置 × 13张 = 104张）
     for &suit in &suits {
-        for _ in 0..2 {
-            for value in 1..=13 {
-                deck.push(Card::new(id_counter, suit, value));
-                id_counter += 1;
-            }
+        for value in 1..=13 {
+            deck.push(Card::new(id_counter, suit, value));
+            id_counter += 1;
         }
     }
 
@@ -57,23 +55,23 @@ mod tests {
 
     #[test]
     fn test_generate_deck_difficulty_1() {
-        // Difficulty 1: 8 spade decks × 2 × 13 = 208 cards
+        // Difficulty 1: 8 spade decks × 13 = 104 cards
         let deck = generate_deck(1);
-        assert_eq!(deck.len(), 208);
+        assert_eq!(deck.len(), 104);
     }
 
     #[test]
     fn test_generate_deck_difficulty_2() {
-        // Difficulty 2: 8 mixed decks × 2 × 13 = 208 cards
+        // Difficulty 2: 8 mixed decks × 13 = 104 cards
         let deck = generate_deck(2);
-        assert_eq!(deck.len(), 208);
+        assert_eq!(deck.len(), 104);
     }
 
     #[test]
     fn test_generate_deck_difficulty_3() {
-        // Difficulty 3: 8 mixed decks × 2 × 13 = 208 cards
+        // Difficulty 3: 8 mixed decks × 13 = 104 cards
         let deck = generate_deck(3);
-        assert_eq!(deck.len(), 208);
+        assert_eq!(deck.len(), 104);
     }
 
     #[test]
@@ -87,7 +85,7 @@ mod tests {
         // 检查总牌数 (54 in columns, rest in stock)
         let column_cards: usize = columns.iter().map(|c| c.len()).sum();
         assert_eq!(column_cards, 54);
-        assert_eq!(stock.len(), 154); // 208 - 54 = 154
+        assert_eq!(stock.len(), 50); // 104 - 54 = 50
 
         // 检查前4列有6张，后6列有5张
         for (i, col) in columns.iter().enumerate() {
@@ -105,11 +103,11 @@ mod tests {
             for difficulty in 1..=3 {
                 let deck = generate_deck(difficulty);
 
-                // 1. 验证总牌数永远是 208 张
+                // 1. 验证总牌数永远是 104 张
                 assert_eq!(
                     deck.len(),
-                    208,
-                    "第{}次迭代，难度{}：牌组应有208张，实际{}张",
+                    104,
+                    "第{}次迭代，难度{}：牌组应有104张，实际{}张",
                     iteration,
                     difficulty,
                     deck.len()
@@ -121,14 +119,14 @@ mod tests {
                     *value_counts.entry(card.value).or_insert(0) += 1;
                 }
 
-                // 3. 验证每个点数都有16张 (8副牌 × 2)
-                // 8个花色配置，每个配置2副牌，所以每种点数有 8 × 2 = 16 张
+                // 3. 验证每个点数都有8张 (8副牌 × 1)
+                // 8个花色配置，每种点数有 8 × 1 = 8 张
                 for value in 1..=13 {
                     let count = value_counts.get(&value).unwrap_or(&0);
                     assert_eq!(
                         *count,
-                        16,
-                        "第{}次迭代，难度{}：点数{}应有16张，实际{}张",
+                        8,
+                        "第{}次迭代，难度{}：点数{}应有8张，实际{}张",
                         iteration,
                         difficulty,
                         value,
@@ -140,8 +138,8 @@ mod tests {
                 let ace_count = value_counts.get(&1).unwrap_or(&0);
                 assert_eq!(
                     *ace_count,
-                    16,
-                    "第{}次迭代，难度{}：A应有16张，实际{}张 - 严重错误！",
+                    8,
+                    "第{}次迭代，难度{}：A应有8张，实际{}张 - 严重错误！",
                     iteration,
                     difficulty,
                     ace_count

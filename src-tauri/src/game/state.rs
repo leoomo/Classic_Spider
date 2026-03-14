@@ -197,13 +197,13 @@ mod tests {
         // 检查初始分数
         assert_eq!(game.score, 500);
 
-        // 检查牌数 (208 total: 54 in columns, 154 in stock)
+        // 检查牌数 (104 total: 54 in columns, 50 in stock)
         let column_cards: usize = game.columns.iter().map(|c| c.len()).sum();
         assert_eq!(column_cards, 54);
-        assert_eq!(game.stock.len(), 154);
+        assert_eq!(game.stock.len(), 50);
 
-        // 检查剩余发牌次数 (154 / 10 = 15 deals, but it's actually calculated as stock.len() / 10)
-        assert_eq!(game.remaining_deals(), 15);
+        // 检查剩余发牌次数 (50 / 10 = 5 deals)
+        assert_eq!(game.remaining_deals(), 5);
     }
 
     #[test]

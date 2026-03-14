@@ -837,7 +837,7 @@
 </script>
 
 <div class="game-container" oncontextmenu={(e) => e.preventDefault()}>
-	<!-- 调试面板 -->
+	<!-- 调试面板已禁用
 	{#if debugMode}
 		<div class="debug-panel">
 			<div class="debug-header">
@@ -877,6 +877,7 @@
 			</div>
 		</div>
 	{/if}
+	-->
 
 	<!-- 顶部工具栏 -->
 	<header class="toolbar">
@@ -932,10 +933,11 @@
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
 				新游戏
 			</button>
-			<!-- 调试按钮 -->
+			<!-- 调试按钮已禁用
 			<button class="btn debug-btn" onclick={() => debugMode = !debugMode} title="切换调试模式">
 				🔧
 			</button>
+			-->
 		</div>
 	</header>
 
