@@ -1,7 +1,7 @@
 [package]
 name = "classic-spider"
 version = "0.1.0"
-description = "Classic Spider Solitaire - 经典蜘蛛纸牌"
+description = "蜘蛛纸牌 - 经典 Windows 蜘蛛纸牌游戏"
 authors = ["zen"]
 edition = "2021"
 

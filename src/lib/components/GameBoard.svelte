@@ -1152,17 +1152,21 @@
 		align-items: flex-end;
 		padding-top: 16px;
 		flex-shrink: 0;
+		padding-left: 8px;
+		padding-right: 8px;
 	}
 
 	.foundation-area {
 		display: flex;
 		justify-content: center;
-		gap: 8px;
+		gap: 6px;
+		flex-wrap: wrap;
+		max-width: 50%;
 	}
 
 	.foundation {
-		width: 70px;
-		height: 98px;
+		width: 65px;
+		height: 90px;
 		border-radius: 8px;
 		display: flex;
 		flex-direction: column;
@@ -1297,13 +1301,13 @@
 		align-items: center;
 		gap: 8px;
 		padding-bottom: 8px;
-		padding-left: 80px;
+		flex-shrink: 0;
 	}
 
 	.stock-pile {
 		position: relative;
-		width: 95px;
-		height: 138px;
+		width: 85px;
+		height: 124px;
 		border: none;
 		border-radius: 10px;
 		background: transparent;
@@ -1330,8 +1334,8 @@
 	/* 发牌堆 - 精美扑克牌背 */
 	.stock-card {
 		position: absolute;
-		width: 95px;
-		height: 138px;
+		width: 85px;
+		height: 124px;
 		border-radius: 10px;
 		background: linear-gradient(145deg, #1a5c1a 0%, #2e7d32 25%, #1a5c1a 50%, #2e7d32 75%, #1a5c1a 100%);
 		border: 3px solid #0d3d0d;
@@ -1766,19 +1770,67 @@
 	}
 
 	/* 响应式优化 - 适配不同屏幕尺寸 */
+	@media (max-width: 1366px) {
+		.foundation-area {
+			gap: 4px;
+		}
+
+		.foundation {
+			width: 58px;
+			height: 80px;
+		}
+
+		.foundation:not(.filled)::after {
+			font-size: 14px;
+			letter-spacing: 2px;
+		}
+
+		.stock-pile {
+			width: 75px;
+			height: 110px;
+		}
+
+		.stock-card {
+			width: 75px;
+			height: 110px;
+		}
+
+		.stock-label {
+			font-size: 14px;
+		}
+	}
+
 	@media (max-width: 1200px) {
 		.columns {
 			gap: 2px;
 		}
 
+		.foundation-area {
+			gap: 3px;
+		}
+
 		.foundation {
-			width: 60px;
-			height: 84px;
+			width: 52px;
+			height: 72px;
 		}
 
 		.foundation:not(.filled)::after {
-			font-size: 16px;
-			letter-spacing: 2px;
+			font-size: 12px;
+			letter-spacing: 1px;
+		}
+
+		.stock-pile {
+			width: 65px;
+			height: 95px;
+		}
+
+		.stock-card {
+			width: 65px;
+			height: 95px;
+		}
+
+		.stock-label {
+			font-size: 12px;
 		}
 	}
 
