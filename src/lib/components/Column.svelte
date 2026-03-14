@@ -65,13 +65,14 @@
 	class:drop-target-valid={isDropTarget && dropValid}
 	class:drop-target-invalid={isDropTarget && !dropValid}
 	class:hint-target={isHintTarget}
+	style={!isDropTarget ? 'background: transparent; box-shadow: none;' : ''}
 	role="list"
 	aria-label="第 {columnIndex + 1} 列"
 >
 	{#each cards as card, idx (card.id)}
 		<div
 			class="card-wrapper"
-			class:hint-card={hintStartIndex !== null && idx >= hintStartIndex}
+			class:hint-card={hintStartIndex !== null && idx === hintStartIndex}
 			style="top: {getCardOffset(idx)}px;"
 			onmousedown={(e) => handleMouseDown(idx, e)}
 			onclick={() => onCardClick?.(idx)}
@@ -103,12 +104,16 @@
 		flex-shrink: 0;
 		transition: background 0.15s ease, box-shadow 0.15s ease;
 		border-radius: 12px;
+		user-select: none;
+		-webkit-user-select: none;
 	}
 
 	.card-wrapper {
 		position: absolute;
 		left: 4px;
 		cursor: grab;
+		user-select: none;
+		-webkit-user-select: none;
 	}
 
 	.card-wrapper:active {

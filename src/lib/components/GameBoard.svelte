@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, flushSync } from 'svelte';
 	import Column from './Column.svelte';
 	import { soundManager } from '$lib/utils/sound';
 	import type { GameState, Card, Suit } from '$lib/types/game';
@@ -28,7 +28,6 @@
 	} | null>(null);
 	let dropTargetCol = $state<number | null>(null);
 	let dropValid = $state(true);
-	let columnElements = $state<HTMLElement[]>([]);
 
 	const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
 
@@ -48,7 +47,6 @@
 	}
 
 	function invokeMock<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
-		console.log(`[Mock] invoke('${cmd}')`, args);
 
 		switch (cmd) {
 			case 'new_game': {
@@ -73,6 +71,31 @@
 				return Promise.resolve(false as T);
 			case 'has_saved_game':
 				return Promise.resolve(false as T);
+		case 'get_hint': {
+			// mock hint logic
+			if (!gameState) return Promise.resolve(null as T);
+			for (let fromCol = 0; fromCol < gameState.columns.length; fromCol++) {
+				const column = gameState.columns[fromCol];
+				for (let startIdx = 0; startIdx < column.length; startIdx++) {
+					const cards = column.slice(startIdx);
+					if (!cards.every(c => c.face_up)) continue;
+					const firstCard = cards[0];
+					for (let toCol = 0; toCol < gameState.columns.length; toCol++) {
+						if (fromCol === toCol) continue;
+						const target = gameState.columns[toCol];
+						if (target.length === 0) {
+							return Promise.resolve([fromCol, startIdx, toCol] as T);
+						} else {
+							const topCard = target[target.length - 1];
+							if (topCard.value === firstCard.value + 1) {
+								return Promise.resolve([fromCol, startIdx, toCol] as T);
+							}
+						}
+					}
+				}
+			}
+			return Promise.resolve(null as T);
+		}
 			default:
 				return Promise.reject(`Unknown command: ${cmd}`);
 		}
@@ -268,6 +291,10 @@
 		const column = gameState.columns[colIndex];
 		const card = column[cardIndex];
 
+
+
+
+
 		if (!card.face_up) return;
 
 		if (selectedCard === null) {
@@ -280,6 +307,7 @@
 					break;
 				}
 			}
+
 			if (isValidSequence) {
 				selectedCard = { colIndex, cardIndex };
 				soundManager.play('click');
@@ -291,6 +319,7 @@
 		} else if (selectedCard.colIndex === colIndex && selectedCard.cardIndex === cardIndex) {
 			selectedCard = null;
 		} else {
+
 			await executeMove(selectedCard.colIndex, selectedCard.cardIndex, colIndex);
 			selectedCard = null;
 		}
@@ -302,11 +331,14 @@
 
 		const movingCardsCount = gameState.columns[fromCol].length - startIdx;
 		const previousCompleted = gameState.completed;
+
+
 		const result = await invoke<GameState | null>('move_cards', {
 			from_col: fromCol,
 			start_idx: startIdx,
 			to_col: toCol
 		});
+
 		if (result) {
 			gameState = result;
 
@@ -332,10 +364,18 @@
 
 	// 拖拽开始
 	function handleDragStart(colIndex: number, cardIndex: number, event: MouseEvent) {
-		if (!gameState || isLoading) return;
+
+		if (!gameState || isLoading) {
+
+			return;
+		}
+
+		// 清理可能残留的旧拖拽元素
+		cleanupDragElements();
 
 		const column = gameState.columns[colIndex];
 		const cards = column.slice(cardIndex);
+
 
 		// 计算鼠标在卡牌上的偏移
 		const target = event.target as HTMLElement;
@@ -368,6 +408,8 @@
 	function createDragElement(cards: Card[]): HTMLElement {
 		const container = document.createElement('div');
 		container.className = 'drag-ghost';
+		container.id = 'drag-ghost-active'; // 添加 ID 便于调试
+		// 简化样式，不使用 filter
 		container.style.cssText = `
 			position: fixed;
 			pointer-events: none;
@@ -388,8 +430,8 @@
 				height: 124px;
 				background: white;
 				border-radius: 8px;
-				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 				overflow: hidden;
+				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 			`;
 
 			// 渲染卡牌SVG
@@ -435,25 +477,45 @@
 		return container;
 	}
 
-	// 拖拽移动
+	// 拖拽移动 - 使用 DOM 操作直接管理高亮
 	function handleDragMove(event: MouseEvent) {
-		if (!dragState?.isDragging || !dragState.element) return;
+		const state = dragState;
+		if (!state?.isDragging || !state.element) return;
 
 		// 更新拖拽元素位置
-		dragState.element.style.left = `${event.clientX - dragState.offsetX}px`;
-		dragState.element.style.top = `${event.clientY - dragState.offsetY}px`;
+		state.element.style.left = `${event.clientX - state.offsetX}px`;
+		state.element.style.top = `${event.clientY - state.offsetY}px`;
 
 		// 检测目标列
 		const targetCol = getColumnAtPosition(event.clientX, event.clientY);
+
+		// 直接使用 DOM 操作更新高亮（绕过 Svelte 响应式）
+		const columnsContainer = document.querySelector('.columns');
+		if (columnsContainer) {
+			const colElements = columnsContainer.querySelectorAll('.column');
+			colElements.forEach((col, index) => {
+				col.classList.remove('drop-target-valid', 'drop-target-invalid');
+				if (index === targetCol && targetCol >= 0) {
+					const isValid = isValidDrop(state.cards, targetCol);
+					col.classList.add(isValid ? 'drop-target-valid' : 'drop-target-invalid');
+				}
+			});
+		}
+
+		// 同时更新响应式状态
 		dropTargetCol = targetCol;
-		dropValid = targetCol >= 0 && isValidDrop(dragState.cards, targetCol);
+		dropValid = targetCol >= 0 && isValidDrop(state.cards, targetCol);
 	}
 
 	// 获取鼠标位置下方的列
 	function getColumnAtPosition(x: number, y: number): number {
-		for (let i = 0; i < columnElements.length; i++) {
-			const col = columnElements[i];
-			if (!col) continue;
+		// 使用 DOM 查询获取所有列元素
+		const columnsContainer = document.querySelector('.columns');
+		if (!columnsContainer) return -1;
+
+		const colElements = columnsContainer.querySelectorAll('.column');
+		for (let i = 0; i < colElements.length; i++) {
+			const col = colElements[i];
 			const rect = col.getBoundingClientRect();
 			if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
 				return i;
@@ -479,31 +541,80 @@
 		return topCard.value === firstDragCard.value + 1;
 	}
 
+	// 清理所有拖拽残留元素
+	function cleanupDragElements() {
+		// 使用多种选择器确保找到所有可能的残留元素
+		const selectors = ['.drag-ghost', '#drag-ghost-active', '.drag-card'];
+		let totalRemoved = 0;
+		selectors.forEach(selector => {
+			document.querySelectorAll(selector).forEach(el => {
+				el.remove();
+				totalRemoved++;
+			});
+		});
+
+
+		// 额外检查 body 直接子元素中的残留
+		document.body.querySelectorAll(':scope > .drag-ghost, :scope > #drag-ghost-active').forEach(el => {
+			el.remove();
+
+		});
+
+		// 直接清除所有列的高亮样式（绕过 Svelte 响应式）
+		document.querySelectorAll('.column.drop-target-valid, .column.drop-target-invalid').forEach(el => {
+			el.classList.remove('drop-target-valid', 'drop-target-invalid');
+		});
+	}
+
 	// 拖拽结束
 	async function handleDragEnd(event: MouseEvent) {
+
 		document.removeEventListener('mousemove', handleDragMove);
 		document.removeEventListener('mouseup', handleDragEnd);
 
-		if (!dragState?.isDragging) return;
+		// 保存当前状态用于执行移动
+		const fromCol = dragState?.fromCol ?? -1;
+		const startCardIndex = dragState?.startCardIndex ?? -1;
+		const targetCol = dropTargetCol;
+		const valid = dropValid;
 
-		// 移除拖拽元素
-		if (dragState.element) {
-			dragState.element.remove();
-		}
 
-		// 如果有有效的放置目标，执行移动
-		if (dropTargetCol !== null && dropTargetCol >= 0 && dropValid) {
-			await executeMove(dragState.fromCol, dragState.startCardIndex, dropTargetCol);
-		} else if (dropTargetCol !== null && dropTargetCol >= 0 && !dropValid) {
-			soundManager.play('error');
-			shakeColumn = dropTargetCol;
-			setTimeout(() => { shakeColumn = null; }, 500);
-		}
 
-		// 重置状态
+		// 强制清理所有拖拽元素（确保不残留）
+		cleanupDragElements();
+
+		// 重置拖拽状态 - 立即重置，确保 UI 更新
 		dragState = null;
 		dropTargetCol = null;
 		dropValid = true;
+
+		// 强制同步更新视图，确保高亮立即消失
+		flushSync();
+
+
+
+		// 执行移动
+		if (targetCol !== null && targetCol >= 0 && valid && fromCol >= 0) {
+
+			await executeMove(fromCol, startCardIndex, targetCol);
+		} else if (targetCol !== null && targetCol >= 0 && !valid) {
+
+			soundManager.play('error');
+			shakeColumn = targetCol;
+			setTimeout(() => { shakeColumn = null; }, 500);
+		} else {
+
+		}
+
+		// 再次清理确保没有残留
+		cleanupDragElements();
+
+		// 再次确保 dropTargetCol 是 null
+		dropTargetCol = null;
+
+
+		// 再次清理确保没有残留
+		cleanupDragElements();
 	}
 
 	async function handleDeal() {
@@ -557,9 +668,16 @@
 		hintCards = null;
 
 		try {
-			const hint = await invoke<{ fromCol: number; startIdx: number; toCol: number } | null>('get_hint');
-			if (hint) {
-				hintCards = hint;
+			// Rust 返回的是元组 [fromCol, startIdx, toCol]
+			const hintArr = await invoke<[number, number, number] | null>('get_hint');
+
+			if (hintArr && Array.isArray(hintArr) && hintArr.length === 3) {
+				hintCards = { fromCol: hintArr[0], startIdx: hintArr[1], toCol: hintArr[2] };
+
+				// 显示提示的详细信息
+				const fromCol = gameState.columns[hintArr[0]];
+				const card = fromCol[hintArr[1]];
+
 				soundManager.play('click');
 
 				// 3秒后自动清除提示
@@ -568,6 +686,7 @@
 				}, 3000);
 			} else {
 				// 没有可用的移动
+
 				soundManager.play('error');
 			}
 		} catch (e) {
@@ -617,13 +736,9 @@
 				clearTimeout(hintTimeout);
 			}
 			// 清理拖拽相关
-			if (dragState?.isDragging) {
-				document.removeEventListener('mousemove', handleDragMove);
-				document.removeEventListener('mouseup', handleDragEnd);
-				if (dragState.element) {
-					dragState.element.remove();
-				}
-			}
+			document.removeEventListener('mousemove', handleDragMove);
+			document.removeEventListener('mouseup', handleDragEnd);
+			cleanupDragElements();
 		};
 	});
 
@@ -784,7 +899,7 @@
 			</div>
 		{:else if gameState}
 			<!-- 10列卡牌 -->
-            <div class="columns" bind:this={columnElements}>
+            <div class="columns">
                 {#each gameState.columns as column, index}
                     <Column
                         cards={column}
