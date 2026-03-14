@@ -31,6 +31,19 @@
 
 ---
 
+## 📥 下载安装
+
+[![Download](https://img.shields.io/badge/Download-v0.1.0-green?logo=github)](https://github.com/leoomo/Classic_Spider/releases/tag/v0.1.0)
+
+| 平台 | 安装包 | 说明 |
+|------|--------|------|
+| Windows | [Classic.Spider_0.1.0_x64-setup.exe](https://github.com/leoomo/Classic_Spider/releases/download/v0.1.0/Classic.Spider_0.1.0_x64-setup.exe) | NSIS 安装包（推荐） |
+| Windows | [Classic.Spider_0.1.0_x64_en-US.msi](https://github.com/leoomo/Classic_Spider/releases/download/v0.1.0/Classic.Spider_0.1.0_x64_en-US.msi) | MSI 企业部署 |
+
+> macOS / Linux 版本即将推出
+
+---
+
 ## 📖 文档
 
 - [产品需求文档 (PRD)](./docs/PRD.md) - 完整的产品规格说明
