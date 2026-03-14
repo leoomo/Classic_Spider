@@ -265,6 +265,7 @@
 
 	function openNewGameModal() {
 		lastFocusedElement = document.activeElement as HTMLElement;
+		showVictoryModal = false; // 先关闭胜利弹窗
 		showDifficultyModal = true;
 		// 延迟聚焦到对话框，确保 DOM 已更新
 		setTimeout(() => {
