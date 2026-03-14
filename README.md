@@ -1,4 +1,4 @@
-# 🕷️ Classic Spider - 蜘蛛纸牌
+# 🕷️ 蜘蛛纸牌
 
 > 经典 Windows 蜘蛛纸牌游戏的 Tauri 复刻版
 
@@ -26,6 +26,16 @@
 - 👴 **适老化设计** - 大字体、大按钮、清晰反馈
 - 💾 **断点续玩** - 自动保存，随时继续
 - 📊 **统计数据** - 记录胜率、最高分、最短用时
+- 🎨 **矢量卡牌** - 高质量 SVG 渲染，任意缩放都清晰
+- ✅ **质量保证** - 1000次洗牌模拟测试，确保牌组永远正确
+
+---
+
+## 📥 下载安装
+
+[![Download](https://img.shields.io/badge/Download-v0.1.0-green?logo=github)](https://github.com/leoomo/Classic_Spider/releases/download/v0.1.0/Classic.Spider_0.1.0_x64-setup.exe)
+
+> [点击下载 Windows 版](https://github.com/leoomo/Classic_Spider/releases/download/v0.1.0/Classic.Spider_0.1.0_x64-setup.exe) · macOS / Linux 即将推出
 
 ---
 
@@ -50,8 +60,9 @@
 
 1. **移动卡牌** - 点击选中，再点击目标位置；或直接拖拽
 2. **发牌** - 点击右下角发牌堆（所有列不能为空）
-3. **撤销** - 支持无限次撤销
-4. **提示** - 自动寻找可移动的牌
+3. **撤销** - 支持无限次撤销（快捷键：Ctrl+Z）
+4. **重做** - 撤销后可重做（快捷键：Ctrl+Y）
+5. **提示** - 自动寻找可移动的牌
 
 ### 胜利条件
 
@@ -66,7 +77,8 @@
 | 应用框架 | [Tauri 2.x](https://tauri.app/) | 原生窗口、跨平台 |
 | 后端逻辑 | [Rust](https://www.rust-lang.org/) | 游戏核心、状态管理 |
 | 前端框架 | [Svelte 5](https://svelte.dev/) | UI 渲染、动画 |
-| 样式方案 | [TailwindCSS](https://tailwindcss.com/) | 快速样式开发 |
+| 样式方案 | [TailwindCSS 4.x](https://tailwindcss.com/) | 快速样式开发 |
+| 测试覆盖 | Rust 内置测试 | 1000次洗牌验证、规则测试 |
 
 ---
 
@@ -139,25 +151,33 @@ pnpm tauri build
 
 ## 📋 开发进度
 
-- [ ] Phase 1: 基础架构
-  - [ ] Tauri 项目初始化
-  - [ ] Rust 核心数据结构
-  - [ ] Svelte 前端脚手架
+- [x] Phase 1: 基础架构
+  - [x] Tauri 2.x 项目初始化
+  - [x] Rust 核心数据结构（Card, Deck, GameState）
+  - [x] Svelte 5 前端脚手架
 
-- [ ] Phase 2: 核心玩法
-  - [ ] 拖拽系统
-  - [ ] 移动规则验证
-  - [ ] 发牌/收牌逻辑
+- [x] Phase 2: 核心玩法
+  - [x] 拖拽系统（点击选中 + 拖拽移动）
+  - [x] 移动规则验证（同花色降序）
+  - [x] 发牌逻辑（10列各发1张）
+  - [x] 收牌逻辑（K→A完整序列自动回收）
 
-- [ ] Phase 3: 完善体验
-  - [ ] 撤销/重做
-  - [ ] 提示系统
-  - [ ] 动画效果
+- [x] Phase 3: 完善体验
+  - [x] 撤销/重做系统
+  - [x] 动画效果（卡牌移动、发牌）
+  - [x] 音效系统
+  - [x] 胜利检测与庆祝动画
 
-- [ ] Phase 4: 打磨发布
-  - [ ] 统计数据
-  - [ ] 性能优化
-  - [ ] 打包发布
+- [x] Phase 4: 打磨发布
+  - [x] 统计数据（胜率、分数、用时）
+  - [x] 断点续玩（自动保存）
+  - [x] GitHub Actions 自动发布
+  - [x] 跨平台打包（Windows / macOS / Linux）
+
+- [ ] Phase 5: 持续优化
+  - [ ] 提示系统（自动寻找可移动牌）
+  - [ ] 更多主题选择
+  - [ ] 多语言支持
 
 ---
 

@@ -31,7 +31,8 @@
 	let dropTargetCol = $state<number | null>(null);
 	let dropValid = $state(true);
 
-	const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
+	// Tauri 2.x 检测方式
+	const isTauri = typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
 
 	const difficultyOptions = [
 		{ level: 1, name: '🌱 简单', suits: '只有黑桃', description: '最容易赢，适合第一次玩' },
@@ -265,6 +266,7 @@
 
 	function openNewGameModal() {
 		lastFocusedElement = document.activeElement as HTMLElement;
+		showVictoryModal = false; // 先关闭胜利弹窗
 		showDifficultyModal = true;
 		// 延迟聚焦到对话框，确保 DOM 已更新
 		setTimeout(() => {
@@ -353,17 +355,19 @@
 	async function executeMove(fromCol: number, startIdx: number, toCol: number) {
 		if (!gameState) return;
 
+		addDebugLog(`move: ${fromCol}[${startIdx}] -> ${toCol}`);
 		const movingCardsCount = gameState.columns[fromCol].length - startIdx;
 		const previousCompleted = gameState.completed;
 
+		try {
+			const result = await invoke<GameState>('move_cards', {
+				fromCol: fromCol,
+				startIdx: startIdx,
+				toCol: toCol
+			});
 
-		const result = await invoke<GameState | null>('move_cards', {
-			from_col: fromCol,
-			start_idx: startIdx,
-			to_col: toCol
-		});
+			addDebugLog(`move_cards returned: moves=${result.moves}`);
 
-		if (result) {
 			gameState = result;
 
 			if (movingCardsCount === 1) {
@@ -383,7 +387,9 @@
 			// 更新撤销/重做状态
 			canUndoState = await invoke<boolean>('can_undo');
 			canRedoState = await invoke<boolean>('can_redo');
-		} else {
+			addDebugLog(`after move: canUndo=${canUndoState}, canRedo=${canRedoState}`);
+		} catch (e) {
+			addDebugLog(`move_cards ERROR: ${e}`);
 			soundManager.play('error');
 			shakeColumn = toCol;
 			setTimeout(() => { shakeColumn = null; }, 500);
@@ -767,8 +773,21 @@
 			initGame(1);
 		}
 
+		// 键盘快捷键
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.ctrlKey && e.key === 'z') {
+				e.preventDefault();
+				handleUndo();
+			} else if (e.ctrlKey && e.key === 'y') {
+				e.preventDefault();
+				handleRedo();
+			}
+		};
+		document.addEventListener('keydown', handleKeyDown);
+
 		// 清理函数
 		return () => {
+			document.removeEventListener('keydown', handleKeyDown);
 			if (hintTimeout) {
 				clearTimeout(hintTimeout);
 			}
@@ -783,8 +802,14 @@
 
 	$effect(() => {
 		if (gameState && !isLoading) {
-			invoke<boolean>('can_undo').then((v) => (canUndoState = v)).catch(() => {});
-			invoke<boolean>('can_redo').then((v) => (canRedoState = v)).catch(() => {});
+			invoke<boolean>('can_undo').then((v) => {
+				addDebugLog(`can_undo: ${v}`);
+				canUndoState = v;
+			}).catch((e) => addDebugLog(`can_undo error: ${e}`));
+			invoke<boolean>('can_redo').then((v) => {
+				addDebugLog(`can_redo: ${v}`);
+				canRedoState = v;
+			}).catch((e) => addDebugLog(`can_redo error: ${e}`));
 		}
 	});
 
@@ -800,9 +825,59 @@
 			}, 5000);
 		}
 	});
+
+	// 调试模式
+	let debugMode = $state(false);
+	let debugLogs = $state<string[]>([]);
+	function addDebugLog(msg: string) {
+		if (!debugMode) return;
+		const time = new Date().toLocaleTimeString();
+		debugLogs = [...debugLogs.slice(-9), `[${time}] ${msg}`];
+	}
 </script>
 
 <div class="game-container" oncontextmenu={(e) => e.preventDefault()}>
+	<!-- 调试面板 -->
+	{#if debugMode}
+		<div class="debug-panel">
+			<div class="debug-header">
+				<span>🔧 调试模式</span>
+				<button class="debug-close" onclick={() => debugMode = false}>×</button>
+			</div>
+			<div class="debug-content">
+				<div class="debug-item">
+					<span>isTauri:</span>
+					<span class:debug-true={isTauri} class:debug-false={!isTauri}>{isTauri ? 'YES' : 'NO (mock)'}</span>
+				</div>
+				<div class="debug-item">
+					<span>canUndo:</span>
+					<span class:debug-true={canUndoState} class:debug-false={!canUndoState}>{canUndoState ? 'YES' : 'NO'}</span>
+				</div>
+				<div class="debug-item">
+					<span>canRedo:</span>
+					<span class:debug-true={canRedoState} class:debug-false={!canRedoState}>{canRedoState ? 'YES' : 'NO'}</span>
+				</div>
+				<div class="debug-item">
+					<span>moves:</span>
+					<span>{gameState?.moves ?? 0}</span>
+				</div>
+				<button class="debug-action" onclick={async () => {
+					try {
+						const info = await invoke<[number, number]>('debug_history');
+						addDebugLog(`history: index=${info[0]}, len=${info[1]}`);
+					} catch (e) {
+						addDebugLog(`debug_history error: ${e}`);
+					}
+				}}>检查历史</button>
+				<div class="debug-logs">
+					{#each debugLogs as log}
+						<div class="debug-log">{log}</div>
+					{/each}
+				</div>
+			</div>
+		</div>
+	{/if}
+
 	<!-- 顶部工具栏 -->
 	<header class="toolbar">
 		<div class="game-info">
@@ -829,20 +904,20 @@
 					<span>音效</span>
 				{/if}
 			</button>
-			<!-- 撤销/重做按钮暂时隐藏
-			<button class="btn undo-btn" disabled title="撤销功能暂未开放">
+			<!-- 撤销按钮 -->
+			<button class="btn undo-btn" onclick={handleUndo} disabled={!canUndoState || isLoading} title={canUndoState ? '撤销 (Ctrl+Z)' : '没有可撤销的操作'}>
 				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
 				</svg>
 				<span>撤销</span>
 			</button>
-			<button class="btn redo-btn" disabled title="重做功能暂未开放">
+			<!-- 重做按钮 -->
+			<button class="btn redo-btn" onclick={handleRedo} disabled={!canRedoState || isLoading} title={canRedoState ? '重做 (Ctrl+Y)' : '没有可重做的操作'}>
 				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/>
 				</svg>
 				<span>重做</span>
 			</button>
-			-->
 			<!-- 提示按钮 -->
 			<button class="btn hint-btn" onclick={handleHint} disabled={isLoading} title="显示提示">
 				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -856,6 +931,10 @@
 			<button class="btn primary" onclick={openNewGameModal}>
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
 				新游戏
+			</button>
+			<!-- 调试按钮 -->
+			<button class="btn debug-btn" onclick={() => debugMode = !debugMode} title="切换调试模式">
+				🔧
 			</button>
 		</div>
 	</header>
@@ -1009,6 +1088,92 @@
 </div>
 
 <style>
+	/* 调试面板 */
+	.debug-panel {
+		position: fixed;
+		top: 60px;
+		right: 10px;
+		width: 280px;
+		background: rgba(0, 0, 0, 0.9);
+		border: 2px solid #4caf50;
+		border-radius: 8px;
+		z-index: 10000;
+		font-family: monospace;
+		font-size: 12px;
+		user-select: text !important;
+		-webkit-user-select: text !important;
+		pointer-events: auto;
+	}
+	.debug-panel * {
+		user-select: text !important;
+		-webkit-user-select: text !important;
+	}
+	.debug-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 8px 12px;
+		background: #4caf50;
+		color: white;
+		font-weight: bold;
+	}
+	.debug-close {
+		background: none;
+		border: none;
+		color: white;
+		font-size: 18px;
+		cursor: pointer;
+		padding: 0 4px;
+	}
+	.debug-content {
+		padding: 10px;
+		color: #fff;
+	}
+	.debug-item {
+		display: flex;
+		justify-content: space-between;
+		padding: 4px 0;
+		border-bottom: 1px solid #333;
+	}
+	.debug-true {
+		color: #4caf50;
+		font-weight: bold;
+	}
+	.debug-false {
+		color: #f44336;
+	}
+	.debug-logs {
+		margin-top: 10px;
+		max-height: 150px;
+		overflow-y: auto;
+		border-top: 1px solid #333;
+		padding-top: 8px;
+	}
+	.debug-log {
+		color: #aaa;
+		font-size: 11px;
+		padding: 2px 0;
+	}
+	.debug-btn {
+		background: #333 !important;
+		padding: 8px 12px !important;
+		min-width: auto !important;
+	}
+	.debug-action {
+		width: 100%;
+		margin: 8px 0;
+		padding: 6px;
+		background: #4caf50;
+		border: none;
+		border-radius: 4px;
+		color: white;
+		cursor: pointer;
+		font-size: 12px;
+	}
+	.debug-action:hover {
+		background: #45a049;
+	}
+
 	.game-container {
 		display: flex;
 		flex-direction: column;
@@ -1016,33 +1181,36 @@
 		background: linear-gradient(135deg, #1a472a 0%, #2d5a3f 50%, #1a472a 100%);
 		color: white;
 		overflow: hidden;
+		user-select: none;
+		-webkit-user-select: none;
 	}
 
 	.toolbar {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 12px 24px;
+		padding: 8px 16px;
 		background: rgba(0, 0, 0, 0.35);
 		backdrop-filter: blur(12px);
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 		flex-shrink: 0;
+		gap: 12px;
 	}
 
 	.game-info {
 		display: flex;
-		gap: 40px;
+		gap: 24px;
 	}
 
 	.info-item {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 2px;
+		gap: 1px;
 	}
 
 	.label {
-		font-size: 18px;
+		font-size: 14px;
 		color: rgba(255, 255, 255, 0.8);
 		text-transform: uppercase;
 		letter-spacing: 1px;
@@ -1050,27 +1218,27 @@
 	}
 
 	.value {
-		font-size: 38px;
+		font-size: 28px;
 		font-weight: 700;
 		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 	}
 
 	.actions {
 		display: flex;
-		gap: 16px;
+		gap: 8px;
 	}
 
 	.btn {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 10px;
-		padding: 20px 36px;
-		border: 3px solid transparent;
-		border-radius: 14px;
+		gap: 8px;
+		padding: 12px 24px;
+		border: 2px solid transparent;
+		border-radius: 10px;
 		background: rgba(255, 255, 255, 0.2);
 		color: white;
-		font-size: 22px;
+		font-size: 18px;
 		font-weight: 700;
 		cursor: pointer;
 		transition: all 0.2s ease-out;
@@ -1117,15 +1285,15 @@
 	}
 
 	.mute-btn, .undo-btn, .redo-btn, .hint-btn {
-		padding: 20px;
-		min-width: 64px;
-		min-height: 64px;
+		padding: 12px;
+		min-width: 48px;
+		min-height: 48px;
 		justify-content: center;
 	}
 
 	.mute-btn svg, .undo-btn svg, .redo-btn svg, .hint-btn svg {
-		width: 32px;
-		height: 32px;
+		width: 24px;
+		height: 24px;
 	}
 
 	.game-board {
@@ -1148,21 +1316,25 @@
 
 	.bottom-area {
 		display: flex;
-		justify-content: space-between;
+		justify-content: flex-start;
 		align-items: flex-end;
 		padding-top: 16px;
 		flex-shrink: 0;
+		padding-left: 8px;
+		padding-right: 8px;
+		gap: 16px;
 	}
 
 	.foundation-area {
 		display: flex;
-		justify-content: center;
-		gap: 8px;
+		justify-content: flex-start;
+		gap: 6px;
+		flex-wrap: wrap;
 	}
 
 	.foundation {
-		width: 70px;
-		height: 98px;
+		width: 65px;
+		height: 90px;
 		border-radius: 8px;
 		display: flex;
 		flex-direction: column;
@@ -1297,13 +1469,14 @@
 		align-items: center;
 		gap: 8px;
 		padding-bottom: 8px;
-		padding-left: 80px;
+		flex-shrink: 0;
+		margin-left: auto;
 	}
 
 	.stock-pile {
 		position: relative;
-		width: 95px;
-		height: 138px;
+		width: 85px;
+		height: 124px;
 		border: none;
 		border-radius: 10px;
 		background: transparent;
@@ -1330,8 +1503,8 @@
 	/* 发牌堆 - 精美扑克牌背 */
 	.stock-card {
 		position: absolute;
-		width: 95px;
-		height: 138px;
+		width: 85px;
+		height: 124px;
 		border-radius: 10px;
 		background: linear-gradient(145deg, #1a5c1a 0%, #2e7d32 25%, #1a5c1a 50%, #2e7d32 75%, #1a5c1a 100%);
 		border: 3px solid #0d3d0d;
@@ -1528,40 +1701,41 @@
 
 	.modal {
 		background: linear-gradient(135deg, #2d5a3f 0%, #1a472a 100%);
-		border-radius: 24px;
-		padding: 44px 56px;
+		border-radius: 20px;
+		padding: 32px 40px;
 		text-align: center;
 		box-shadow:
-			0 24px 80px rgba(0, 0, 0, 0.5),
+			0 20px 60px rgba(0, 0, 0, 0.5),
 			inset 0 1px 0 rgba(255, 255, 255, 0.1);
 		animation: modal-appear 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 		border: 1px solid rgba(255, 255, 255, 0.1);
-		min-width: 380px;
+		min-width: 320px;
+		max-width: 90vw;
 	}
 
 	.modal-title {
-		font-size: 40px;
+		font-size: 28px;
 		font-weight: 700;
 		color: white;
-		margin-bottom: 36px;
+		margin-bottom: 24px;
 		text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 	}
 
 	.difficulty-options {
 		display: flex;
 		flex-direction: column;
-		gap: 18px;
-		margin-bottom: 28px;
+		gap: 12px;
+		margin-bottom: 20px;
 	}
 
 	.difficulty-option {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 10px;
-		padding: 28px 52px;
-		border: 3px solid rgba(255, 255, 255, 0.25);
-		border-radius: 18px;
+		gap: 6px;
+		padding: 16px 32px;
+		border: 2px solid rgba(255, 255, 255, 0.25);
+		border-radius: 14px;
 		background: rgba(255, 255, 255, 0.08);
 		color: white;
 		cursor: pointer;
@@ -1572,48 +1746,48 @@
 	.difficulty-option:hover {
 		background: rgba(255, 255, 255, 0.18);
 		border-color: rgba(255, 255, 255, 0.5);
-		transform: translateY(-4px) scale(1.02);
-		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+		transform: translateY(-3px) scale(1.02);
+		box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
 	}
 
 	.difficulty-option.selected {
 		border-color: #4caf50;
 		background: rgba(76, 175, 80, 0.25);
-		box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+		box-shadow: 0 0 16px rgba(76, 175, 80, 0.3);
 		transform: scale(1.02);
 	}
 
 	.difficulty-option.selected::after {
 		content: '✓';
 		position: absolute;
-		top: 8px;
-		right: 12px;
-		font-size: 18px;
+		top: 6px;
+		right: 10px;
+		font-size: 16px;
 		color: #4caf50;
 	}
 
 	.difficulty-name {
-		font-size: 30px;
+		font-size: 22px;
 		font-weight: 700;
 	}
 
 	.difficulty-suits {
-		font-size: 22px;
+		font-size: 16px;
 		color: rgba(255, 255, 255, 0.85);
 		font-weight: 500;
 	}
 
 	.difficulty-desc {
-		font-size: 18px;
+		font-size: 14px;
 		color: rgba(255, 255, 255, 0.65);
 	}
 
 	.cancel-btn {
 		background: rgba(255, 255, 255, 0.15);
-		padding: 14px 36px;
-		font-size: 20px;
+		padding: 12px 28px;
+		font-size: 16px;
 		border-radius: 10px;
-		margin-top: 8px;
+		margin-top: 4px;
 	}
 
 	.cancel-btn:hover {
@@ -1766,19 +1940,67 @@
 	}
 
 	/* 响应式优化 - 适配不同屏幕尺寸 */
+	@media (max-width: 1366px) {
+		.foundation-area {
+			gap: 4px;
+		}
+
+		.foundation {
+			width: 58px;
+			height: 80px;
+		}
+
+		.foundation:not(.filled)::after {
+			font-size: 14px;
+			letter-spacing: 2px;
+		}
+
+		.stock-pile {
+			width: 75px;
+			height: 110px;
+		}
+
+		.stock-card {
+			width: 75px;
+			height: 110px;
+		}
+
+		.stock-label {
+			font-size: 14px;
+		}
+	}
+
 	@media (max-width: 1200px) {
 		.columns {
 			gap: 2px;
 		}
 
+		.foundation-area {
+			gap: 3px;
+		}
+
 		.foundation {
-			width: 60px;
-			height: 84px;
+			width: 52px;
+			height: 72px;
 		}
 
 		.foundation:not(.filled)::after {
-			font-size: 16px;
-			letter-spacing: 2px;
+			font-size: 12px;
+			letter-spacing: 1px;
+		}
+
+		.stock-pile {
+			width: 65px;
+			height: 95px;
+		}
+
+		.stock-card {
+			width: 65px;
+			height: 95px;
+		}
+
+		.stock-label {
+			font-size: 12px;
 		}
 	}
 

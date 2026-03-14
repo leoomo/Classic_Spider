@@ -95,4 +95,94 @@ mod tests {
             assert_eq!(col.len(), expected);
         }
     }
+
+    /// 运行1000次模拟洗牌，验证牌组永远正确
+    #[test]
+    fn test_shuffle_1000_times_consistency() {
+        use std::collections::HashMap;
+
+        for iteration in 0..1000 {
+            for difficulty in 1..=3 {
+                let deck = generate_deck(difficulty);
+
+                // 1. 验证总牌数永远是 208 张
+                assert_eq!(
+                    deck.len(),
+                    208,
+                    "第{}次迭代，难度{}：牌组应有208张，实际{}张",
+                    iteration,
+                    difficulty,
+                    deck.len()
+                );
+
+                // 2. 统计每个点数的牌数量
+                let mut value_counts: HashMap<u8, usize> = HashMap::new();
+                for card in &deck {
+                    *value_counts.entry(card.value).or_insert(0) += 1;
+                }
+
+                // 3. 验证每个点数都有16张 (8副牌 × 2)
+                // 8个花色配置，每个配置2副牌，所以每种点数有 8 × 2 = 16 张
+                for value in 1..=13 {
+                    let count = value_counts.get(&value).unwrap_or(&0);
+                    assert_eq!(
+                        *count,
+                        16,
+                        "第{}次迭代，难度{}：点数{}应有16张，实际{}张",
+                        iteration,
+                        difficulty,
+                        value,
+                        count
+                    );
+                }
+
+                // 4. 特别验证 A (value=1) 永远不会多出
+                let ace_count = value_counts.get(&1).unwrap_or(&0);
+                assert_eq!(
+                    *ace_count,
+                    16,
+                    "第{}次迭代，难度{}：A应有16张，实际{}张 - 严重错误！",
+                    iteration,
+                    difficulty,
+                    ace_count
+                );
+            }
+        }
+    }
+
+    /// 验证所有卡牌ID唯一
+    #[test]
+    fn test_all_card_ids_unique() {
+        use std::collections::HashSet;
+
+        for difficulty in 1..=3 {
+            let deck = generate_deck(difficulty);
+            let ids: HashSet<u32> = deck.iter().map(|c| c.id).collect();
+
+            assert_eq!(
+                ids.len(),
+                deck.len(),
+                "难度{}：存在重复的卡牌ID",
+                difficulty
+            );
+        }
+    }
+
+    /// 验证洗牌后牌组确实被打乱（非确定性测试）
+    #[test]
+    fn test_shuffle_randomness() {
+        let deck1 = generate_deck(1);
+        let deck2 = generate_deck(1);
+
+        // 两次洗牌结果应该不同（极低概率相同）
+        let first_10_match = deck1.iter().take(10).zip(deck2.iter().take(10))
+            .filter(|(a, b)| a.id == b.id)
+            .count();
+
+        // 前10张牌完全相同的概率极低
+        assert!(
+            first_10_match < 10,
+            "洗牌随机性测试失败：两次洗牌前10张完全相同"
+        );
+    }
 }

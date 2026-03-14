@@ -613,12 +613,14 @@ pub fn move_cards(
 ) -> Result<GameState, String> {
     let mut game = state.game.lock().unwrap();
 
-    // 保存到历史记录
+    // 先执行移动
+    game.move_cards(from_col, start_idx, to_col)?;
+
+    // 成功后保存新状态到历史记录
     if let Some(history) = state.history.lock().unwrap().as_mut() {
         history.push(game.clone());
     }
 
-    game.move_cards(from_col, start_idx, to_col)?;
     Ok(game.clone())
 }
 
@@ -626,12 +628,14 @@ pub fn move_cards(
 pub fn deal_cards(state: State<AppState>) -> Result<GameState, String> {
     let mut game = state.game.lock().unwrap();
 
-    // 保存到历史记录
+    // 先执行发牌
+    game.deal()?;
+
+    // 成功后保存新状态到历史记录
     if let Some(history) = state.history.lock().unwrap().as_mut() {
         history.push(game.clone());
     }
 
-    game.deal()?;
     Ok(game.clone())
 }
 

@@ -39,6 +39,8 @@ The project follows a clean separation between Rust backend and Svelte frontend,
 
 1. **Game rules validation** happens entirely in Rust (`rules.rs`) - frontend sends move requests, backend validates and returns new state
 2. **Undo/Redo** implemented via history stack in Rust (`history.rs`)
+   - **重要**: 修改游戏状态的命令必须**先执行操作，再将新状态推入历史栈**（见 `move_cards` 和 `deal_cards`）
+   - 错误顺序：先 `history.push()` 再执行操作 → 会导致重做失败
 3. **State synchronization** - frontend store subscribes to Rust GameState, updates on every command response
 4. **Drag interaction** - frontend handles visual drag, validates with backend on drop via `move_cards` command
 
