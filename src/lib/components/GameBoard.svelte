@@ -1701,40 +1701,41 @@
 
 	.modal {
 		background: linear-gradient(135deg, #2d5a3f 0%, #1a472a 100%);
-		border-radius: 24px;
-		padding: 44px 56px;
+		border-radius: 20px;
+		padding: 32px 40px;
 		text-align: center;
 		box-shadow:
-			0 24px 80px rgba(0, 0, 0, 0.5),
+			0 20px 60px rgba(0, 0, 0, 0.5),
 			inset 0 1px 0 rgba(255, 255, 255, 0.1);
 		animation: modal-appear 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 		border: 1px solid rgba(255, 255, 255, 0.1);
-		min-width: 380px;
+		min-width: 320px;
+		max-width: 90vw;
 	}
 
 	.modal-title {
-		font-size: 40px;
+		font-size: 28px;
 		font-weight: 700;
 		color: white;
-		margin-bottom: 36px;
+		margin-bottom: 24px;
 		text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 	}
 
 	.difficulty-options {
 		display: flex;
 		flex-direction: column;
-		gap: 18px;
-		margin-bottom: 28px;
+		gap: 12px;
+		margin-bottom: 20px;
 	}
 
 	.difficulty-option {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 10px;
-		padding: 28px 52px;
-		border: 3px solid rgba(255, 255, 255, 0.25);
-		border-radius: 18px;
+		gap: 6px;
+		padding: 16px 32px;
+		border: 2px solid rgba(255, 255, 255, 0.25);
+		border-radius: 14px;
 		background: rgba(255, 255, 255, 0.08);
 		color: white;
 		cursor: pointer;
@@ -1745,48 +1746,48 @@
 	.difficulty-option:hover {
 		background: rgba(255, 255, 255, 0.18);
 		border-color: rgba(255, 255, 255, 0.5);
-		transform: translateY(-4px) scale(1.02);
-		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+		transform: translateY(-3px) scale(1.02);
+		box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
 	}
 
 	.difficulty-option.selected {
 		border-color: #4caf50;
 		background: rgba(76, 175, 80, 0.25);
-		box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+		box-shadow: 0 0 16px rgba(76, 175, 80, 0.3);
 		transform: scale(1.02);
 	}
 
 	.difficulty-option.selected::after {
 		content: '✓';
 		position: absolute;
-		top: 8px;
-		right: 12px;
-		font-size: 18px;
+		top: 6px;
+		right: 10px;
+		font-size: 16px;
 		color: #4caf50;
 	}
 
 	.difficulty-name {
-		font-size: 30px;
+		font-size: 22px;
 		font-weight: 700;
 	}
 
 	.difficulty-suits {
-		font-size: 22px;
+		font-size: 16px;
 		color: rgba(255, 255, 255, 0.85);
 		font-weight: 500;
 	}
 
 	.difficulty-desc {
-		font-size: 18px;
+		font-size: 14px;
 		color: rgba(255, 255, 255, 0.65);
 	}
 
 	.cancel-btn {
 		background: rgba(255, 255, 255, 0.15);
-		padding: 14px 36px;
-		font-size: 20px;
+		padding: 12px 28px;
+		font-size: 16px;
 		border-radius: 10px;
-		margin-top: 8px;
+		margin-top: 4px;
 	}
 
 	.cancel-btn:hover {
