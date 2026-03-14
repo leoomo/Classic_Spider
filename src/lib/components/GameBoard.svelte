@@ -1016,6 +1016,8 @@
 		background: linear-gradient(135deg, #1a472a 0%, #2d5a3f 50%, #1a472a 100%);
 		color: white;
 		overflow: hidden;
+		user-select: none;
+		-webkit-user-select: none;
 	}
 
 	.toolbar {
