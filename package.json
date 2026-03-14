@@ -1,6 +1,6 @@
 {
   "name": "classic-spider",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "蜘蛛纸牌 - 经典 Windows 蜘蛛纸牌游戏",
   "type": "module",
   "scripts": {
