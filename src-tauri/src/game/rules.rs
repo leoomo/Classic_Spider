@@ -1,4 +1,7 @@
-use super::card::{Card, Suit};
+use super::card::Card;
+
+#[cfg(test)]
+use super::card::Suit;
 
 #[cfg(test)]
 use super::state::GameState;

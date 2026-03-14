@@ -129,16 +129,19 @@
     100% { background-position: 20px 20px; }
   }
 
-  /* 选中效果 */
+  /* 选中效果 - 更明显的金色光晕 */
   .card.selected {
-    transform: translateY(-8px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), 0 0 0 3px rgba(255, 215, 0, 0.7);
+    transform: translateY(-10px);
+    box-shadow:
+      0 12px 28px rgba(0, 0, 0, 0.4),
+      0 0 0 4px rgba(255, 215, 0, 0.9),
+      0 0 20px rgba(255, 215, 0, 0.4);
     z-index: 100;
   }
 
-  .card:hover:not(.selected) {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    transform: scale(1.02);
+  .card:hover:not(.selected):not(.back) {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    transform: scale(1.03);
   }
 
   .card.back {
@@ -148,5 +151,35 @@
   .card.back:hover {
     transform: none;
     box-shadow: none;
+  }
+
+  /* 响应式优化 */
+  @media (max-width: 1200px) {
+    .card {
+      width: 78px;
+      height: 114px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .card {
+      width: 72px;
+      height: 105px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .card {
+      width: 66px;
+      height: 96px;
+    }
+
+    .card.selected {
+      transform: translateY(-6px);
+      box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.35),
+        0 0 0 3px rgba(255, 215, 0, 0.9),
+        0 0 15px rgba(255, 215, 0, 0.4);
+    }
   }
 </style>

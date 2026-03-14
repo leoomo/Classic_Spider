@@ -12,11 +12,13 @@ pub enum Suit {
 
 impl Suit {
     /// 是否为红色花色
+    #[allow(dead_code)]
     pub fn is_red(self) -> bool {
         matches!(self, Suit::Heart | Suit::Diamond)
     }
 
     /// 获取花色符号
+    #[allow(dead_code)]
     pub fn symbol(self) -> &'static str {
         match self {
             Suit::Spade => "♠",
@@ -77,6 +79,7 @@ impl Card {
     }
 
     /// 获取点数显示文本
+    #[allow(dead_code)]
     pub fn display_value(self) -> String {
         match self.value {
             1 => "A".to_string(),

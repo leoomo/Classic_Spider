@@ -62,11 +62,13 @@ impl GameState {
     }
 
     /// 获取剩余发牌次数
+    #[allow(dead_code)]
     pub fn remaining_deals(&self) -> u8 {
         (self.stock.len() / 10) as u8
     }
 
     /// 检查是否可以发牌
+    #[allow(dead_code)]
     pub fn can_deal(&self) -> bool {
         !self.stock.is_empty() && self.columns.iter().all(|col| !col.is_empty())
     }

@@ -28,7 +28,7 @@
 	} | null>(null);
 	let dropTargetCol = $state<number | null>(null);
 	let dropValid = $state(true);
-	let columnElements: HTMLElement[] = [];
+	let columnElements = $state<HTMLElement[]>([]);
 
 	const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
 
@@ -542,6 +542,39 @@
 		isMuted = soundManager.toggleMute();
 	}
 
+	// 提示功能
+	let hintCards = $state<{ fromCol: number; startIdx: number; toCol: number } | null>(null);
+	let hintTimeout: ReturnType<typeof setTimeout> | null = null;
+
+	async function handleHint() {
+		if (!gameState || isLoading) return;
+
+		// 清除之前的提示
+		if (hintTimeout) {
+			clearTimeout(hintTimeout);
+			hintTimeout = null;
+		}
+		hintCards = null;
+
+		try {
+			const hint = await invoke<{ fromCol: number; startIdx: number; toCol: number } | null>('get_hint');
+			if (hint) {
+				hintCards = hint;
+				soundManager.play('click');
+
+				// 3秒后自动清除提示
+				hintTimeout = setTimeout(() => {
+					hintCards = null;
+				}, 3000);
+			} else {
+				// 没有可用的移动
+				soundManager.play('error');
+			}
+		} catch (e) {
+			console.error('Hint failed:', e);
+		}
+	}
+
 	async function handleUndo() {
 		if (!canUndoState || isLoading) return;
 		try {
@@ -577,6 +610,21 @@
 			console.error('Failed to check saved game:', e);
 			initGame(1);
 		}
+
+		// 清理函数
+		return () => {
+			if (hintTimeout) {
+				clearTimeout(hintTimeout);
+			}
+			// 清理拖拽相关
+			if (dragState?.isDragging) {
+				document.removeEventListener('mousemove', handleDragMove);
+				document.removeEventListener('mouseup', handleDragEnd);
+				if (dragState.element) {
+					dragState.element.remove();
+				}
+			}
+		};
 	});
 
 	let remainingDeals = $derived(gameState ? Math.floor(gameState.stock.length / 10) : 0);
@@ -634,6 +682,14 @@
 					<path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/>
 				</svg>
 			</button>
+			<!-- 提示按钮 -->
+			<button class="btn hint-btn" onclick={handleHint} disabled={isLoading} title="提示">
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
+					<path d="M9 18h6"/>
+					<path d="M10 22h4"/>
+				</svg>
+			</button>
 			<!-- 新游戏按钮 -->
 			<button class="btn primary" onclick={openNewGameModal}>
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
@@ -664,9 +720,11 @@
 
 		<!-- 难度选择模态框 -->
 		{#if showDifficultyModal}
-			<div class="modal-overlay" onclick={() => showDifficultyModal = false}>
-				<div class="modal difficulty-modal" onclick={(e) => e.stopPropagation()}>
-					<h2 class="modal-title">选择难度</h2>
+			<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+			<div class="modal-overlay" onclick={() => showDifficultyModal = false} role="button" tabindex="-1" onkeydown={(e) => e.key === 'Escape' && (showDifficultyModal = false)}>
+				<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+				<div class="modal difficulty-modal" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="difficulty-title" tabindex="-1">
+					<h2 class="modal-title" id="difficulty-title">选择难度</h2>
 					<div class="difficulty-options">
 						{#each difficultyOptions as option}
 							<button
@@ -732,6 +790,8 @@
                         cards={column}
                         columnIndex={index}
                         selectedIndex={selectedCard?.colIndex === index ? selectedCard.cardIndex : null}
+                        hintStartIndex={hintCards?.fromCol === index ? hintCards.startIdx : null}
+                        isHintTarget={hintCards?.toCol === index}
                         onCardClick={(cardIndex) => handleCardClick(index, cardIndex)}
                         onDragStart={(colIdx, cardIdx, evt) => handleDragStart(colIdx, cardIdx, evt)}
                         shake={shakeColumn === index}
@@ -743,12 +803,28 @@
 
 			<!-- 底部区域 -->
 			<div class="bottom-area">
-				<!-- 完成区域 -->
+				<!-- 完成区域 - 经典牌堆效果 -->
 				<div class="foundation-area">
 					{#each Array(8) as _, i}
 						<div class="foundation" class:filled={i < gameState.completed}>
 							{#if i < gameState.completed}
-								<span class="check">✓</span>
+								<!-- 完成的牌堆 - 显示K牌 -->
+								<div class="completed-stack">
+									<div class="stack-card stack-3"></div>
+									<div class="stack-card stack-2"></div>
+									<div class="stack-card stack-1"></div>
+									<div class="stack-card stack-top">
+										<span class="card-value">K</span>
+										<span class="card-suit">♠</span>
+									</div>
+								</div>
+							{:else}
+								<!-- 空位 - 显示占位符 -->
+								<div class="foundation-placeholder">
+									<span class="placeholder-k">K</span>
+									<span class="placeholder-arrow">↓</span>
+									<span class="placeholder-a">A</span>
+								</div>
 							{/if}
 						</div>
 					{/each}
@@ -810,16 +886,17 @@
 	}
 
 	.label {
-		font-size: 18px;
-		color: rgba(255, 255, 255, 0.7);
+		font-size: 20px;
+		color: rgba(255, 255, 255, 0.85);
 		text-transform: uppercase;
-		letter-spacing: 2px;
-		font-weight: 500;
+		letter-spacing: 1px;
+		font-weight: 600;
 	}
 
 	.value {
-		font-size: 36px;
-		font-weight: bold;
+		font-size: 42px;
+		font-weight: 700;
+		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 	}
 
 	.actions {
@@ -831,52 +908,57 @@
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		padding: 14px 24px;
+		padding: 16px 28px;
 		border: none;
-		border-radius: 10px;
-		background: rgba(255, 255, 255, 0.12);
+		border-radius: 12px;
+		background: rgba(255, 255, 255, 0.18);
 		color: white;
 		font-size: 20px;
 		font-weight: 600;
 		cursor: pointer;
-		transition: all 0.25s ease-out;
+		transition: all 0.2s ease-out;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 	}
 
 	.btn:hover:not(:disabled) {
-		background: rgba(255, 255, 255, 0.22);
+		background: rgba(255, 255, 255, 0.28);
 		transform: translateY(-2px);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+		box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
 	}
 
 	.btn:active:not(:disabled) {
 		transform: translateY(0);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 	}
 
 	.btn.primary {
 		background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
-		box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+		box-shadow: 0 3px 10px rgba(76, 175, 80, 0.4);
 	}
 
 	.btn.primary:hover:not(:disabled) {
 		background: linear-gradient(135deg, #66bb6a 0%, #388e3c 100%);
-		box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+		box-shadow: 0 5px 16px rgba(76, 175, 80, 0.5);
 	}
 
 	.btn:disabled {
-		opacity: 0.5;
+		background: rgba(255, 255, 255, 0.08);
+		color: rgba(255, 255, 255, 0.4);
 		cursor: not-allowed;
 		transform: none;
+		box-shadow: none;
 	}
 
-	.mute-btn, .undo-btn, .redo-btn {
-		padding: 14px;
-		min-width: 52px;
+	.mute-btn, .undo-btn, .redo-btn, .hint-btn {
+		padding: 16px;
+		min-width: 56px;
+		min-height: 56px;
 		justify-content: center;
 	}
 
-	.mute-btn svg, .undo-btn svg, .redo-btn svg {
-		width: 24px;
-		height: 24px;
+	.mute-btn svg, .undo-btn svg, .redo-btn svg, .hint-btn svg {
+		width: 28px;
+		height: 28px;
 	}
 
 	.game-board {
@@ -907,30 +989,144 @@
 
 	.foundation-area {
 		display: flex;
-		gap: 4px;
+		gap: 6px;
 	}
 
 	.foundation {
-		width: 55px;
-		height: 78px;
-		border: 2px solid rgba(255, 255, 255, 0.35);
+		width: 52px;
+		height: 72px;
 		border-radius: 6px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+		position: relative;
+		overflow: hidden;
+	}
+
+	/* 空位样式 - 优雅的占位符 */
+	.foundation:not(.filled) {
+		background: rgba(0, 0, 0, 0.15);
+		border: 2px dashed rgba(255, 255, 255, 0.35);
+	}
+
+	.foundation-placeholder {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1px;
+		opacity: 0.6;
+	}
+
+	.placeholder-k,
+	.placeholder-a {
+		font-size: 18px;
+		font-weight: 700;
+		color: rgba(255, 255, 255, 0.9);
+		line-height: 1;
+		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+	}
+
+	.placeholder-arrow {
+		font-size: 12px;
+		color: rgba(255, 255, 255, 0.7);
+		line-height: 1;
+	}
+
+	/* 完成样式 - 真实的牌堆效果 */
+	.foundation.filled {
+		background: linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%);
+		border: none;
+		box-shadow:
+			0 2px 4px rgba(0, 0, 0, 0.2),
+			0 4px 8px rgba(0, 0, 0, 0.15),
+			inset 0 1px 0 rgba(255, 255, 255, 0.8);
+		animation: complete-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+
+	@keyframes complete-pop {
+		0% {
+			transform: scale(0.8);
+			opacity: 0;
+		}
+		50% {
+			transform: scale(1.1);
+		}
+		100% {
+			transform: scale(1);
+			opacity: 1;
+		}
+	}
+
+	.foundation.filled::before {
+		content: '';
+		position: absolute;
+		top: 3px;
+		left: 3px;
+		right: 3px;
+		bottom: 3px;
+		background: linear-gradient(145deg, #f8f8f8 0%, #e8e8e8 100%);
+		border-radius: 4px;
+		box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+	}
+
+	/* 完成的牌堆 */
+	.completed-stack {
+		position: relative;
+		width: 100%;
+		height: 100%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: rgba(0, 0, 0, 0.25);
-		transition: all 0.3s ease;
+		z-index: 1;
 	}
 
-	.foundation.filled {
-		background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
-		border-color: #4caf50;
-		box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+	.stack-card {
+		position: absolute;
+		width: 38px;
+		height: 52px;
+		background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
+		border-radius: 4px;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 	}
 
-	.check {
-		font-size: 28px;
-		color: white;
+	.stack-3 {
+		transform: translateY(4px);
+		opacity: 0.5;
+	}
+
+	.stack-2 {
+		transform: translateY(2px);
+		opacity: 0.7;
+	}
+
+	.stack-1 {
+		transform: translateY(0);
+		opacity: 0.9;
+	}
+
+	.stack-top {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		transform: translateY(-2px);
+		z-index: 2;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	}
+
+	.card-value {
+		font-size: 18px;
+		font-weight: bold;
+		color: #1a1a2e;
+		line-height: 1;
+	}
+
+	.card-suit {
+		font-size: 16px;
+		color: #1a1a2e;
+		line-height: 1;
 	}
 
 	.stock-area {
@@ -954,7 +1150,14 @@
 	}
 
 	.stock-pile:hover:not(:disabled) {
-		transform: scale(1.05);
+		transform: scale(1.08);
+		filter: brightness(1.1);
+	}
+
+	.stock-pile:hover:not(:disabled) .stock-card {
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.25),
+			3px 3px 10px rgba(0, 0, 0, 0.5);
 	}
 
 	.stock-pile:disabled {
@@ -967,9 +1170,11 @@
 		width: 85px;
 		height: 120px;
 		border-radius: 8px;
-		background: linear-gradient(135deg, #1565c0 0%, #1976d2 50%, #1565c0 100%);
-		border: 3px solid #0d47a1;
-		box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.4);
+		background: linear-gradient(135deg, #2e7d32 0%, #388e3c 50%, #2e7d32 100%);
+		border: 3px solid #1b5e20;
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.2),
+			2px 2px 6px rgba(0, 0, 0, 0.4);
 		pointer-events: none;
 		cursor: pointer;
 	}
@@ -987,17 +1192,23 @@
 		align-items: center;
 		justify-content: center;
 		height: 100%;
-		gap: 20px;
-		font-size: 24px;
+		gap: 24px;
+	}
+
+	.loading span {
+		font-size: 26px;
+		font-weight: 500;
+		color: rgba(255, 255, 255, 0.9);
 	}
 
 	.spinner {
-		width: 56px;
-		height: 56px;
-		border: 4px solid rgba(255, 255, 255, 0.3);
+		width: 64px;
+		height: 64px;
+		border: 5px solid rgba(255, 255, 255, 0.25);
 		border-top-color: white;
 		border-radius: 50%;
 		animation: spin 1s linear infinite;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 	}
 
 	@keyframes spin {
@@ -1007,7 +1218,35 @@
 	}
 
 	.error {
-		color: #ef5350;
+		color: #ff6b6b;
+		background: rgba(0, 0, 0, 0.6);
+		padding: 28px 48px;
+		border-radius: 20px;
+		backdrop-filter: blur(12px);
+		border: 2px solid rgba(255, 107, 107, 0.4);
+		box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+		max-width: 80%;
+		text-align: center;
+	}
+
+	.error span {
+		font-size: 28px;
+		font-weight: 600;
+		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+		line-height: 1.4;
+	}
+
+	.error .btn {
+		margin-top: 20px;
+		background: rgba(255, 107, 107, 0.25);
+		border: 2px solid rgba(255, 107, 107, 0.6);
+		padding: 16px 32px;
+		font-size: 22px;
+	}
+
+	.error .btn:hover {
+		background: rgba(255, 107, 107, 0.35);
+		transform: translateY(-2px);
 	}
 
 	/* 存档恢复提示框 */
@@ -1027,41 +1266,46 @@
 
 	.restore-modal {
 		background: linear-gradient(135deg, #2d5a3f 0%, #1a472a 100%);
-		border-radius: 20px;
-		padding: 40px 50px;
+		border-radius: 24px;
+		padding: 48px 56px;
 		text-align: center;
-		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-		max-width: 420px;
-		animation: modal-appear 0.3s ease-out;
+		box-shadow:
+			0 24px 80px rgba(0, 0, 0, 0.5),
+			inset 0 1px 0 rgba(255, 255, 255, 0.1);
+		max-width: 460px;
+		animation: modal-appear 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+		border: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
 	@keyframes modal-appear {
 		from {
 			opacity: 0;
-			transform: scale(0.9);
+			transform: scale(0.85) translateY(20px);
 		}
 		to {
 			opacity: 1;
-			transform: scale(1);
+			transform: scale(1) translateY(0);
 		}
 	}
 
 	.restore-title {
-		font-size: 36px;
-		font-weight: bold;
+		font-size: 40px;
+		font-weight: 700;
 		color: white;
-		margin-bottom: 16px;
+		margin-bottom: 20px;
+		text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 	}
 
 	.restore-text {
-		font-size: 22px;
+		font-size: 24px;
 		color: rgba(255, 255, 255, 0.9);
-		margin-bottom: 32px;
+		margin-bottom: 36px;
+		line-height: 1.5;
 	}
 
 	.restore-buttons {
 		display: flex;
-		gap: 16px;
+		gap: 20px;
 		justify-content: center;
 	}
 
@@ -1082,72 +1326,85 @@
 
 	.modal {
 		background: linear-gradient(135deg, #2d5a3f 0%, #1a472a 100%);
-		border-radius: 20px;
-		padding: 40px 50px;
+		border-radius: 24px;
+		padding: 44px 56px;
 		text-align: center;
-		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-		animation: modal-appear 0.3s ease-out;
+		box-shadow:
+			0 24px 80px rgba(0, 0, 0, 0.5),
+			inset 0 1px 0 rgba(255, 255, 255, 0.1);
+		animation: modal-appear 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		min-width: 380px;
 	}
 
 	.modal-title {
-		font-size: 36px;
-		font-weight: bold;
+		font-size: 40px;
+		font-weight: 700;
 		color: white;
-		margin-bottom: 32px;
+		margin-bottom: 36px;
+		text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 	}
 
 	.difficulty-options {
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
-		margin-bottom: 24px;
+		gap: 18px;
+		margin-bottom: 28px;
 	}
 
 	.difficulty-option {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 8px;
-		padding: 24px 48px;
-		border: 3px solid rgba(255, 255, 255, 0.3);
-		border-radius: 16px;
-		background: rgba(255, 255, 255, 0.1);
+		gap: 10px;
+		padding: 28px 52px;
+		border: 3px solid rgba(255, 255, 255, 0.25);
+		border-radius: 18px;
+		background: rgba(255, 255, 255, 0.08);
 		color: white;
 		cursor: pointer;
-		transition: all 0.25s ease;
+		transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
 	.difficulty-option:hover {
-		background: rgba(255, 255, 255, 0.2);
+		background: rgba(255, 255, 255, 0.18);
 		border-color: rgba(255, 255, 255, 0.5);
-		transform: translateY(-4px);
-		box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+		transform: translateY(-4px) scale(1.02);
+		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 	}
 
 	.difficulty-option.selected {
 		border-color: #4caf50;
-		background: rgba(76, 175, 80, 0.2);
+		background: rgba(76, 175, 80, 0.25);
+		box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
 	}
 
 	.difficulty-name {
-		font-size: 28px;
-		font-weight: bold;
+		font-size: 30px;
+		font-weight: 700;
 	}
 
 	.difficulty-suits {
-		font-size: 20px;
-		color: rgba(255, 255, 255, 0.8);
+		font-size: 22px;
+		color: rgba(255, 255, 255, 0.85);
+		font-weight: 500;
 	}
 
 	.difficulty-desc {
-		font-size: 16px;
-		color: rgba(255, 255, 255, 0.6);
+		font-size: 18px;
+		color: rgba(255, 255, 255, 0.65);
 	}
 
 	.cancel-btn {
-		background: rgba(255, 255, 255, 0.1);
-		padding: 12px 32px;
-		font-size: 18px;
+		background: rgba(255, 255, 255, 0.15);
+		padding: 14px 36px;
+		font-size: 20px;
+		border-radius: 10px;
+		margin-top: 8px;
+	}
+
+	.cancel-btn:hover {
+		background: rgba(255, 255, 255, 0.25);
 	}
 
 	/* 胜利庆祝 */
@@ -1203,35 +1460,40 @@
 
 	.victory-modal {
 		background: linear-gradient(135deg, #2d5a3f 0%, #1a472a 100%);
-		border-radius: 24px;
-		padding: 48px 64px;
+		border-radius: 28px;
+		padding: 52px 72px;
 		text-align: center;
-		box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
-		animation: victory-appear 0.5s ease-out;
+		box-shadow:
+			0 32px 100px rgba(0, 0, 0, 0.6),
+			inset 0 1px 0 rgba(255, 255, 255, 0.1);
+		animation: victory-appear 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 		z-index: 2001;
+		border: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
 	@keyframes victory-appear {
 		0% {
 			opacity: 0;
-			transform: scale(0.5) rotate(-10deg);
+			transform: scale(0.6) rotate(-8deg) translateY(30px);
 		}
-		50% {
-			transform: scale(1.1) rotate(2deg);
+		60% {
+			transform: scale(1.05) rotate(1deg) translateY(-5px);
 		}
 		100% {
 			opacity: 1;
-			transform: scale(1) rotate(0deg);
+			transform: scale(1) rotate(0deg) translateY(0);
 		}
 	}
 
 	.victory-title {
-		font-size: 48px;
-		font-weight: bold;
+		font-size: 52px;
+		font-weight: 800;
 		color: #ffe66d;
-		margin-bottom: 32px;
-		text-shadow: 0 4px 20px rgba(255, 230, 109, 0.5);
-		animation: pulse 1s ease-in-out infinite;
+		margin-bottom: 36px;
+		text-shadow:
+			0 4px 20px rgba(255, 230, 109, 0.5),
+			0 0 60px rgba(255, 230, 109, 0.3);
+		animation: pulse 1.2s ease-in-out infinite;
 	}
 
 	@keyframes pulse {
@@ -1242,26 +1504,32 @@
 	.victory-stats {
 		display: flex;
 		justify-content: center;
-		gap: 48px;
-		margin-bottom: 40px;
+		gap: 56px;
+		margin-bottom: 44px;
 	}
 
 	.stat {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 8px;
+		gap: 10px;
+		padding: 16px 32px;
+		background: rgba(0, 0, 0, 0.2);
+		border-radius: 16px;
+		border: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
 	.stat-label {
-		font-size: 20px;
-		color: rgba(255, 255, 255, 0.7);
+		font-size: 22px;
+		color: rgba(255, 255, 255, 0.75);
+		font-weight: 500;
 	}
 
 	.stat-value {
-		font-size: 48px;
-		font-weight: bold;
+		font-size: 52px;
+		font-weight: 800;
 		color: #4ecdc4;
+		text-shadow: 0 2px 8px rgba(78, 205, 196, 0.4);
 	}
 
 	.victory-buttons {
@@ -1270,11 +1538,100 @@
 		gap: 16px;
 	}
 
-	/* 拖拽视觉元素 */
- .drag-ghost {
- position: fixed;
- pointer-events: none;
- z-index: 10000;
- opacity: 0.95;
- }
+	/* 拖拽视觉元素 - 动态创建的元素需要 :global */
+	:global(.drag-ghost) {
+		position: fixed;
+		pointer-events: none;
+		z-index: 10000;
+		opacity: 0.95;
+	}
+
+	/* 响应式优化 - 适配不同屏幕尺寸 */
+	@media (max-width: 1200px) {
+		.columns {
+			gap: 2px;
+		}
+
+		.foundation-area {
+			gap: 4px;
+		}
+
+		.foundation {
+			width: 48px;
+			height: 66px;
+		}
+	}
+
+	@media (max-width: 1024px) {
+		.toolbar {
+			padding: 10px 16px;
+		}
+
+		.game-info {
+			gap: 28px;
+		}
+
+		.label {
+			font-size: 18px;
+		}
+
+		.value {
+			font-size: 36px;
+		}
+
+		.btn {
+			padding: 12px 20px;
+			font-size: 18px;
+		}
+
+		.mute-btn, .undo-btn, .redo-btn, .hint-btn {
+			min-width: 48px;
+			min-height: 48px;
+			padding: 12px;
+		}
+
+		.columns {
+			gap: 1px;
+			padding: 0 4px;
+		}
+	}
+
+	@media (max-width: 768px) {
+		.toolbar {
+			flex-direction: column;
+			gap: 12px;
+			padding: 12px;
+		}
+
+		.actions {
+			gap: 8px;
+		}
+
+		.btn {
+			padding: 10px 16px;
+			font-size: 16px;
+		}
+
+		.mute-btn, .undo-btn, .redo-btn, .hint-btn {
+			min-width: 44px;
+			min-height: 44px;
+			padding: 10px;
+		}
+
+		.columns {
+			gap: 0px;
+			transform: scale(0.95);
+			transform-origin: top center;
+		}
+
+		.bottom-area {
+			flex-direction: column;
+			align-items: center;
+			gap: 16px;
+		}
+
+		.stock-area {
+			order: -1;
+		}
+	}
 </style>

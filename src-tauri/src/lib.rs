@@ -3,7 +3,6 @@ mod game;
 mod storage;
 
 use commands::game::GameManager;
-use tauri_plugin_opener::init;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
