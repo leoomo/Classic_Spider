@@ -98,8 +98,8 @@
 <style>
 	.column {
 		position: relative;
-		min-height: 400px;
-		width: 95px;
+		min-height: 420px;
+		width: 105px;
 		padding: 4px;
 		flex-shrink: 0;
 		transition: background 0.15s ease, box-shadow 0.15s ease;
@@ -121,8 +121,8 @@
 	}
 
 	.empty-slot {
-		width: 85px;
-		height: 120px;
+		width: 95px;
+		height: 138px;
 		border: 2px dashed rgba(255, 255, 255, 0.4);
 		border-radius: 8px;
 		display: flex;
@@ -217,14 +217,31 @@
 	/* 响应式优化 */
 	@media (max-width: 1200px) {
 		.column {
-			width: 88px;
-			min-height: 350px;
+			width: 98px;
+			min-height: 380px;
 			padding: 3px;
 		}
 
 		.empty-slot {
-			width: 78px;
-			height: 110px;
+			width: 88px;
+			height: 128px;
+		}
+
+		.placeholder {
+			font-size: 42px;
+		}
+	}
+
+	@media (max-width: 1024px) {
+		.column {
+			width: 90px;
+			min-height: 350px;
+			padding: 2px;
+		}
+
+		.empty-slot {
+			width: 80px;
+			height: 116px;
 		}
 
 		.placeholder {
@@ -232,36 +249,19 @@
 		}
 	}
 
-	@media (max-width: 1024px) {
+	@media (max-width: 768px) {
 		.column {
 			width: 82px;
 			min-height: 320px;
-			padding: 2px;
 		}
 
 		.empty-slot {
 			width: 72px;
-			height: 102px;
+			height: 105px;
 		}
 
 		.placeholder {
 			font-size: 34px;
-		}
-	}
-
-	@media (max-width: 768px) {
-		.column {
-			width: 76px;
-			min-height: 280px;
-		}
-
-		.empty-slot {
-			width: 66px;
-			height: 94px;
-		}
-
-		.placeholder {
-			font-size: 30px;
 		}
 	}
 </style>

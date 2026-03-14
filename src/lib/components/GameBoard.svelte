@@ -932,6 +932,29 @@
 				<button class="btn" onclick={() => initGame(1)}>重试</button>
 			</div>
 		{:else if gameState}
+			<!-- 回收堆区域 - 顶部居中 -->
+			<div class="foundation-area">
+				{#each Array(8) as _, i}
+					<div class="foundation" class:filled={i < gameState.completed}>
+						{#if i < gameState.completed}
+							<!-- 完成的牌堆 - 显示K牌 -->
+							<div class="completed-stack">
+								<div class="stack-card stack-3"></div>
+								<div class="stack-card stack-2"></div>
+								<div class="stack-card stack-1"></div>
+								<div class="stack-card stack-top">
+									<span class="card-value">K</span>
+									<span class="card-suit">♠</span>
+								</div>
+							</div>
+						{:else}
+							<!-- 空位 - 无内容 -->
+							<div class="foundation-placeholder"></div>
+						{/if}
+					</div>
+				{/each}
+			</div>
+
 			<!-- 10列卡牌 -->
             <div class="columns">
                 {#each gameState.columns as column, index}
@@ -950,32 +973,8 @@
                 {/each}
             </div>
 
-			<!-- 底部区域 -->
+			<!-- 底部区域 - 只保留发牌堆 -->
 			<div class="bottom-area">
-				<!-- 完成区域 - 经典牌堆效果 -->
-				<div class="foundation-area">
-					{#each Array(8) as _, i}
-						<div class="foundation" class:filled={i < gameState.completed}>
-							{#if i < gameState.completed}
-								<!-- 完成的牌堆 - 显示K牌 -->
-								<div class="completed-stack">
-									<div class="stack-card stack-3"></div>
-									<div class="stack-card stack-2"></div>
-									<div class="stack-card stack-1"></div>
-									<div class="stack-card stack-top">
-										<span class="card-value">K</span>
-										<span class="card-suit">♠</span>
-									</div>
-								</div>
-							{:else}
-								<!-- 空位 - 无内容 -->
-								<div class="foundation-placeholder"></div>
-							{/if}
-						</div>
-					{/each}
-				</div>
-
-				<!-- 牌堆 -->
 				<div class="stock-area">
 					<button
 						class="stock-pile"
@@ -1027,19 +1026,19 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 4px;
+		gap: 2px;
 	}
 
 	.label {
-		font-size: 20px;
-		color: rgba(255, 255, 255, 0.85);
+		font-size: 18px;
+		color: rgba(255, 255, 255, 0.8);
 		text-transform: uppercase;
 		letter-spacing: 1px;
 		font-weight: 600;
 	}
 
 	.value {
-		font-size: 42px;
+		font-size: 38px;
 		font-weight: 700;
 		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 	}
@@ -1137,7 +1136,7 @@
 
 	.bottom-area {
 		display: flex;
-		justify-content: space-between;
+		justify-content: flex-end;
 		align-items: flex-end;
 		padding-top: 8px;
 		flex-shrink: 0;
@@ -1145,13 +1144,14 @@
 
 	.foundation-area {
 		display: flex;
-		gap: 6px;
+		justify-content: center;
+		gap: 8px;
 	}
 
 	.foundation {
-		width: 52px;
-		height: 72px;
-		border-radius: 6px;
+		width: 70px;
+		height: 98px;
+		border-radius: 8px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -1161,10 +1161,19 @@
 		overflow: hidden;
 	}
 
-	/* 空位样式 - 优雅的占位符 */
+	/* 空位样式 - Win7 经典风格 */
 	.foundation:not(.filled) {
-		background: rgba(0, 0, 0, 0.15);
-		border: 2px dashed rgba(255, 255, 255, 0.35);
+		background: linear-gradient(180deg, #1a3a1a 0%, #0d1f0d 100%);
+		border: 3px solid rgba(255, 255, 255, 0.25);
+		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+	}
+
+	.foundation:not(.filled)::after {
+		content: 'K  A';
+		font-size: 20px;
+		font-weight: 700;
+		color: rgba(255, 255, 255, 0.5);
+		letter-spacing: 4px;
 	}
 
 	.foundation-placeholder {
@@ -1173,21 +1182,6 @@
 		align-items: center;
 		gap: 1px;
 		opacity: 0.6;
-	}
-
-	.placeholder-k,
-	.placeholder-a {
-		font-size: 18px;
-		font-weight: 700;
-		color: rgba(255, 255, 255, 0.9);
-		line-height: 1;
-		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-	}
-
-	.placeholder-arrow {
-		font-size: 12px;
-		color: rgba(255, 255, 255, 0.7);
-		line-height: 1;
 	}
 
 	/* 完成样式 - 真实的牌堆效果 */
@@ -1295,8 +1289,8 @@
 
 	.stock-pile {
 		position: relative;
-		width: 85px;
-		height: 120px;
+		width: 95px;
+		height: 138px;
 		border: none;
 		border-radius: 8px;
 		background: transparent;
@@ -1323,8 +1317,8 @@
 
 	.stock-card {
 		position: absolute;
-		width: 85px;
-		height: 120px;
+		width: 95px;
+		height: 138px;
 		border-radius: 8px;
 		background: linear-gradient(135deg, #2e7d32 0%, #388e3c 50%, #2e7d32 100%);
 		border: 3px solid #1b5e20;
@@ -1725,31 +1719,20 @@
 			gap: 2px;
 		}
 
-		.foundation-area {
-			gap: 4px;
+		.foundation {
+			width: 60px;
+			height: 84px;
 		}
 
-		.foundation {
-			width: 48px;
-			height: 66px;
+		.foundation:not(.filled)::after {
+			font-size: 16px;
+			letter-spacing: 2px;
 		}
 	}
 
 	@media (max-width: 1024px) {
 		.toolbar {
 			padding: 10px 16px;
-		}
-
-		.game-info {
-			gap: 28px;
-		}
-
-		.label {
-			font-size: 18px;
-		}
-
-		.value {
-			font-size: 36px;
 		}
 
 		.btn {

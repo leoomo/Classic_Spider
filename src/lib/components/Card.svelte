@@ -98,8 +98,8 @@
 <style>
   .card {
     position: absolute;
-    width: 85px;
-    height: 124px;
+    width: 95px;
+    height: 138px;
     cursor: pointer;
     transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
     user-select: none;
@@ -156,22 +156,22 @@
   /* 响应式优化 */
   @media (max-width: 1200px) {
     .card {
-      width: 78px;
-      height: 114px;
+      width: 88px;
+      height: 128px;
     }
   }
 
   @media (max-width: 1024px) {
     .card {
-      width: 72px;
-      height: 105px;
+      width: 80px;
+      height: 116px;
     }
   }
 
   @media (max-width: 768px) {
     .card {
-      width: 66px;
-      height: 96px;
+      width: 72px;
+      height: 105px;
     }
 
     .card.selected {
