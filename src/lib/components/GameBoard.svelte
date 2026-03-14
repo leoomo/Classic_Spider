@@ -829,20 +829,20 @@
 					<span>音效</span>
 				{/if}
 			</button>
-			<!-- 撤销按钮 -->
-			<button class="btn undo-btn" onclick={handleUndo} disabled={!canUndoState || isLoading} title="撤销上一步">
+			<!-- 撤销/重做按钮暂时隐藏
+			<button class="btn undo-btn" disabled title="撤销功能暂未开放">
 				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
 				</svg>
 				<span>撤销</span>
 			</button>
-			<!-- 重做按钮 -->
-			<button class="btn redo-btn" onclick={handleRedo} disabled={!canRedoState || isLoading} title="重做上一步">
+			<button class="btn redo-btn" disabled title="重做功能暂未开放">
 				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/>
 				</svg>
 				<span>重做</span>
 			</button>
+			-->
 			<!-- 提示按钮 -->
 			<button class="btn hint-btn" onclick={handleHint} disabled={isLoading} title="显示提示">
 				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
