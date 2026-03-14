@@ -23,6 +23,8 @@ impl History {
 
     /// 保存新状态（会清除重做栈）
     pub fn push(&mut self, state: GameState) {
+        println!("[History] push called: current_index={}, states_len={}", self.current_index, self.states.len());
+
         // 移除当前位置之后的所有状态
         self.states.truncate(self.current_index + 1);
 
@@ -35,6 +37,8 @@ impl History {
         } else {
             self.current_index += 1;
         }
+
+        println!("[History] after push: current_index={}, states_len={}", self.current_index, self.states.len());
     }
 
     /// 撤销
@@ -59,12 +63,18 @@ impl History {
 
     /// 是否可以撤销
     pub fn can_undo(&self) -> bool {
+        println!("[History] can_undo: current_index={}, result={}", self.current_index, self.current_index > 0);
         self.current_index > 0
     }
 
     /// 是否可以重做
     pub fn can_redo(&self) -> bool {
         self.current_index < self.states.len() - 1
+    }
+
+    /// 调试信息
+    pub fn debug_info(&self) -> (usize, usize) {
+        (self.current_index, self.states.len())
     }
 }
 

@@ -57,11 +57,15 @@ pub fn move_cards(
     manager: State<GameManager>,
     app_handle: AppHandle,
 ) -> Result<GameState, String> {
+    println!("========== [MOVE_CARDS] called: {}[{}] -> {} ==========", from_col, start_idx, to_col);
+
     // 先保存历史
     {
         let mut history = manager.history.lock().unwrap();
         let state = manager.state.lock().unwrap();
+        println!("[MOVE_CARDS] Before push: history index = {}", history.debug_info().0);
         history.push(state.clone());
+        println!("[MOVE_CARDS] After push: history index = {}", history.debug_info().0);
     }
 
     // 执行移动
@@ -191,4 +195,10 @@ pub fn can_undo(manager: State<GameManager>) -> bool {
 #[tauri::command]
 pub fn can_redo(manager: State<GameManager>) -> bool {
     manager.history.lock().unwrap().can_redo()
+}
+
+/// 调试历史状态
+#[tauri::command]
+pub fn debug_history(manager: State<GameManager>) -> (usize, usize) {
+    manager.history.lock().unwrap().debug_info()
 }

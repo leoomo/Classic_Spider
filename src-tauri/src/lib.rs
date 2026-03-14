@@ -22,7 +22,8 @@ pub fn run() {
             commands::game::undo,
             commands::game::redo,
             commands::game::can_undo,
-            commands::game::can_redo
+            commands::game::can_redo,
+            commands::game::debug_history
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
