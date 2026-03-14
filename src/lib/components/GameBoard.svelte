@@ -67,6 +67,9 @@
 			}
 			case 'deal_cards': {
 				const result = mockDealCards();
+				if (result === null) {
+					return Promise.reject(new Error('没有可发的牌'));
+				}
 				return Promise.resolve(result as T);
 			}
 			case 'can_undo':
@@ -225,6 +228,12 @@
 	function mockDealCards(): GameState | null {
 		if (!gameState) return null;
 
+		// 检查是否有牌可发
+		if (gameState.stock.length === 0) {
+			return null;
+		}
+
+		// 检查是否有空列
 		if (gameState.columns.some(col => col.length === 0)) {
 			return null;
 		}
