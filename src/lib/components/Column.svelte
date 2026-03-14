@@ -140,7 +140,7 @@
 
 	.placeholder {
 		font-size: 44px;
-		color: rgba(255, 255, 255, 0.5);
+		color: rgba(255, 255, 255, 0.7);
 		font-weight: 700;
 		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 	}

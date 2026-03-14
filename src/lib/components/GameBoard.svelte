@@ -15,6 +15,8 @@
 	let canRedoState = $state(false);
 	let showDifficultyModal = $state(false);
 	let showVictoryModal = $state(false);
+	let showConfetti = $state(true); // 控制庆祝动画
+	let lastFocusedElement: HTMLElement | null = null; // 焦点管理 - 记录打开对话框前聚焦的元素
 
 	// 拖拽状态
 	let dragState = $state<{
@@ -262,7 +264,29 @@
 	}
 
 	function openNewGameModal() {
+		lastFocusedElement = document.activeElement as HTMLElement;
 		showDifficultyModal = true;
+		// 延迟聚焦到对话框，确保 DOM 已更新
+		setTimeout(() => {
+			const modal = document.querySelector('.difficulty-modal') as HTMLElement;
+			if (modal) modal.focus();
+		}, 0);
+	}
+
+	function closeDifficultyModal() {
+		showDifficultyModal = false;
+		// 恢复焦点到触发元素
+		if (lastFocusedElement) {
+			setTimeout(() => lastFocusedElement?.focus(), 0);
+		}
+	}
+
+	function closeVictoryModal() {
+		showVictoryModal = false;
+		// 恢复焦点到触发元素
+		if (lastFocusedElement) {
+			setTimeout(() => lastFocusedElement?.focus(), 0);
+		}
 	}
 
 	function selectDifficulty(level: number) {
@@ -755,7 +779,12 @@
 	$effect(() => {
 		if (gameState?.completed === 8 && !showVictoryModal) {
 			showVictoryModal = true;
+			showConfetti = true;
 			soundManager.play('win');
+			// 5秒后停止动画，减少对光敏用户的影响
+			setTimeout(() => {
+				showConfetti = false;
+			}, 5000);
 		}
 	});
 </script>
@@ -841,7 +870,7 @@
 		<!-- 难度选择模态框 -->
 		{#if showDifficultyModal}
 			<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-			<div class="modal-overlay" onclick={() => showDifficultyModal = false} role="button" tabindex="-1" onkeydown={(e) => e.key === 'Escape' && (showDifficultyModal = false)}>
+			<div class="modal-overlay" onclick={closeDifficultyModal} role="button" tabindex="-1" onkeydown={(e) => e.key === 'Escape' && closeDifficultyModal()}>
 				<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 				<div class="modal difficulty-modal" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="difficulty-title" tabindex="-1">
 					<h2 class="modal-title" id="difficulty-title">选择难度</h2>
@@ -858,7 +887,7 @@
 							</button>
 						{/each}
 					</div>
-					<button class="btn cancel-btn" onclick={() => showDifficultyModal = false}>
+					<button class="btn cancel-btn" onclick={closeDifficultyModal}>
 						取消
 					</button>
 				</div>
@@ -868,8 +897,8 @@
 		<!-- 胜利庆祝模态框 -->
 		{#if showVictoryModal}
 			<div class="victory-overlay">
-				<div class="confetti-container">
-					{#each Array(50) as _, i}
+				<div class="confetti-container" class:stopped={!showConfetti}>
+					{#each Array(20) as _, i}
 						<div class="confetti" style="--delay: {Math.random() * 3}s; --x: {Math.random() * 100}vw; --rotate: {Math.random() * 720 - 360}deg;"></div>
 					{/each}
 				</div>
@@ -956,7 +985,7 @@
 						class="stock-pile"
 						disabled={gameState.stock.length === 0}
 						onclick={handleDeal}
-						aria-label="发牌"
+						aria-label="发牌，剩余 {remainingDeals} 次"
 						type="button"
 					>
 						{#if remainingDeals > 0}
@@ -1077,7 +1106,7 @@
 		cursor: not-allowed;
 		transform: none;
 		box-shadow: none;
-		opacity: 0.6;
+		opacity: 0.7;
 	}
 
 	.mute-btn, .undo-btn, .redo-btn, .hint-btn {
@@ -1361,7 +1390,7 @@
 	}
 
 	.error span {
-		font-size: 28px;
+		font-size: 30px;
 		font-weight: 600;
 		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 		line-height: 1.4;
@@ -1495,6 +1524,7 @@
 		color: white;
 		cursor: pointer;
 		transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+		position: relative;
 	}
 
 	.difficulty-option:hover {
@@ -1508,6 +1538,16 @@
 		border-color: #4caf50;
 		background: rgba(76, 175, 80, 0.25);
 		box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+		transform: scale(1.02);
+	}
+
+	.difficulty-option.selected::after {
+		content: '✓';
+		position: absolute;
+		top: 8px;
+		right: 12px;
+		font-size: 18px;
+		color: #4caf50;
 	}
 
 	.difficulty-name {
@@ -1560,6 +1600,11 @@
 		height: 100%;
 		pointer-events: none;
 		overflow: hidden;
+		transition: opacity 1s ease-out;
+	}
+
+	.confetti-container.stopped {
+		opacity: 0;
 	}
 
 	.confetti {
@@ -1571,6 +1616,7 @@
 		top: -20px;
 		animation: confetti-fall 3s ease-in-out var(--delay) infinite;
 		transform: rotate(var(--rotate));
+		will-change: transform, opacity;
 	}
 
 	.confetti:nth-child(4n+1) { --color: #ff6b6b; }
@@ -1763,6 +1809,31 @@
 
 		.stock-area {
 			order: -1;
+		}
+	}
+
+	/* 减少动画偏好 - 对光敏用户友好 */
+	@media (prefers-reduced-motion: reduce) {
+		*, *::before, *::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+		}
+
+		.confetti {
+			display: none;
+		}
+
+		.btn {
+			transition: none;
+		}
+
+		.column {
+			transition: none;
+		}
+
+		.card {
+			transition: none;
 		}
 	}
 </style>
