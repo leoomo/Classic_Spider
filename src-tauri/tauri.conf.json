@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "蜘蛛纸牌",
+  "productName": "Spider Solitaire",
   "version": "0.1.1",
   "identifier": "com.classic-spider.app",
   "build": {
