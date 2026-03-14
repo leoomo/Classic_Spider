@@ -32,9 +32,9 @@
 	const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
 
 	const difficultyOptions = [
-		{ level: 1, name: '简单', suits: '1种花色', description: '适合新手' },
-		{ level: 2, name: '中等', suits: '2种花色', description: '有一定挑战' },
-		{ level: 3, name: '困难', suits: '4种花色', description: '高手挑战' }
+		{ level: 1, name: '🌱 简单', suits: '只有黑桃', description: '最容易赢，适合第一次玩' },
+		{ level: 2, name: '🌟 中等', suits: '黑桃+红桃', description: '有点挑战性' },
+		{ level: 3, name: '🔥 困难', suits: '四种花色', description: '最难，适合高手' }
 	];
 
 	async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
@@ -780,30 +780,35 @@
 		<div class="actions">
 			<button class="btn mute-btn" onclick={toggleMute} title={isMuted ? '开启音效' : '静音'}>
 				{#if isMuted}
-					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+					<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+					<span>静音</span>
 				{:else}
-					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+					<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+					<span>音效</span>
 				{/if}
 			</button>
 			<!-- 撤销按钮 -->
-			<button class="btn undo-btn" onclick={handleUndo} disabled={!canUndoState || isLoading} title="撤销">
-				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+			<button class="btn undo-btn" onclick={handleUndo} disabled={!canUndoState || isLoading} title="撤销上一步">
+				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
 				</svg>
+				<span>撤销</span>
 			</button>
 			<!-- 重做按钮 -->
-			<button class="btn redo-btn" onclick={handleRedo} disabled={!canRedoState || isLoading} title="重做">
-				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+			<button class="btn redo-btn" onclick={handleRedo} disabled={!canRedoState || isLoading} title="重做上一步">
+				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/>
 				</svg>
+				<span>重做</span>
 			</button>
 			<!-- 提示按钮 -->
-			<button class="btn hint-btn" onclick={handleHint} disabled={isLoading} title="提示">
-				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+			<button class="btn hint-btn" onclick={handleHint} disabled={isLoading} title="显示提示">
+				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
 					<path d="M9 18h6"/>
 					<path d="M10 22h4"/>
 				</svg>
+				<span>提示</span>
 			</button>
 			<!-- 新游戏按钮 -->
 			<button class="btn primary" onclick={openNewGameModal}>
@@ -1016,29 +1021,39 @@
 
 	.actions {
 		display: flex;
-		gap: 12px;
+		gap: 16px;
 	}
 
 	.btn {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		padding: 16px 28px;
-		border: none;
-		border-radius: 12px;
-		background: rgba(255, 255, 255, 0.18);
+		justify-content: center;
+		gap: 10px;
+		padding: 20px 36px;
+		border: 3px solid transparent;
+		border-radius: 14px;
+		background: rgba(255, 255, 255, 0.2);
 		color: white;
-		font-size: 20px;
-		font-weight: 600;
+		font-size: 22px;
+		font-weight: 700;
 		cursor: pointer;
 		transition: all 0.2s ease-out;
-		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+		min-width: 64px;
+		min-height: 64px;
 	}
 
 	.btn:hover:not(:disabled) {
-		background: rgba(255, 255, 255, 0.28);
-		transform: translateY(-2px);
-		box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+		background: rgba(255, 255, 255, 0.32);
+		transform: translateY(-3px);
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+		border-color: rgba(255, 255, 255, 0.4);
+	}
+
+	.btn:focus {
+		outline: none;
+		border-color: rgba(255, 255, 255, 0.8);
+		box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
 	}
 
 	.btn:active:not(:disabled) {
@@ -1057,23 +1072,24 @@
 	}
 
 	.btn:disabled {
-		background: rgba(255, 255, 255, 0.08);
-		color: rgba(255, 255, 255, 0.4);
+		background: rgba(255, 255, 255, 0.1);
+		color: rgba(255, 255, 255, 0.35);
 		cursor: not-allowed;
 		transform: none;
 		box-shadow: none;
+		opacity: 0.6;
 	}
 
 	.mute-btn, .undo-btn, .redo-btn, .hint-btn {
-		padding: 16px;
-		min-width: 56px;
-		min-height: 56px;
+		padding: 20px;
+		min-width: 64px;
+		min-height: 64px;
 		justify-content: center;
 	}
 
 	.mute-btn svg, .undo-btn svg, .redo-btn svg, .hint-btn svg {
-		width: 28px;
-		height: 28px;
+		width: 32px;
+		height: 32px;
 	}
 
 	.game-board {
