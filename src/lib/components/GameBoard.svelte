@@ -1306,7 +1306,7 @@
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		padding: 8px;
+		padding: 20px 8px 8px;
 		overflow: hidden;
 		min-height: 0;
 	}
