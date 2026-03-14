@@ -379,6 +379,10 @@
 			if (result.completed === 8) {
 				soundManager.play('win');
 			}
+
+			// 更新撤销/重做状态
+			canUndoState = await invoke<boolean>('can_undo');
+			canRedoState = await invoke<boolean>('can_redo');
 		} else {
 			soundManager.play('error');
 			shakeColumn = toCol;
@@ -665,6 +669,9 @@
 			if (result) {
 				gameState = result;
 				soundManager.play('deal');
+				// 更新撤销/重做状态
+				canUndoState = await invoke<boolean>('can_undo');
+				canRedoState = await invoke<boolean>('can_redo');
 			}
 		} catch (e) {
 			error = `发牌失败: ${e}`;
@@ -724,6 +731,9 @@
 			gameState = await invoke<GameState>('undo');
 			selectedCard = null;
 			soundManager.play('flip');
+			// 更新撤销/重做状态
+			canUndoState = await invoke<boolean>('can_undo');
+			canRedoState = await invoke<boolean>('can_redo');
 		} catch (e) {
 			console.error('Undo failed:', e);
 		}
@@ -735,6 +745,9 @@
 			gameState = await invoke<GameState>('redo');
 			selectedCard = null;
 			soundManager.play('flip');
+			// 更新撤销/重做状态
+			canUndoState = await invoke<boolean>('can_undo');
+			canRedoState = await invoke<boolean>('can_redo');
 		} catch (e) {
 			console.error('Redo failed:', e);
 		}
@@ -789,7 +802,7 @@
 	});
 </script>
 
-<div class="game-container">
+<div class="game-container" oncontextmenu={(e) => e.preventDefault()}>
 	<!-- 顶部工具栏 -->
 	<header class="toolbar">
 		<div class="game-info">
@@ -932,29 +945,6 @@
 				<button class="btn" onclick={() => initGame(1)}>重试</button>
 			</div>
 		{:else if gameState}
-			<!-- 回收堆区域 - 顶部居中 -->
-			<div class="foundation-area">
-				{#each Array(8) as _, i}
-					<div class="foundation" class:filled={i < gameState.completed}>
-						{#if i < gameState.completed}
-							<!-- 完成的牌堆 - 显示K牌 -->
-							<div class="completed-stack">
-								<div class="stack-card stack-3"></div>
-								<div class="stack-card stack-2"></div>
-								<div class="stack-card stack-1"></div>
-								<div class="stack-card stack-top">
-									<span class="card-value">K</span>
-									<span class="card-suit">♠</span>
-								</div>
-							</div>
-						{:else}
-							<!-- 空位 - 无内容 -->
-							<div class="foundation-placeholder"></div>
-						{/if}
-					</div>
-				{/each}
-			</div>
-
 			<!-- 10列卡牌 -->
             <div class="columns">
                 {#each gameState.columns as column, index}
@@ -973,8 +963,30 @@
                 {/each}
             </div>
 
-			<!-- 底部区域 - 只保留发牌堆 -->
+			<!-- 底部区域 - 回收堆在左，发牌堆在右 -->
 			<div class="bottom-area">
+				<!-- 回收堆 - 左下角 -->
+				<div class="foundation-area">
+					{#each Array(8) as _, i}
+						<div class="foundation" class:filled={i < gameState.completed}>
+							{#if i < gameState.completed}
+								<div class="completed-stack">
+									<div class="stack-card stack-3"></div>
+									<div class="stack-card stack-2"></div>
+									<div class="stack-card stack-1"></div>
+									<div class="stack-card stack-top">
+										<span class="card-value">K</span>
+										<span class="card-suit">♠</span>
+									</div>
+								</div>
+							{:else}
+								<div class="foundation-placeholder"></div>
+							{/if}
+						</div>
+					{/each}
+				</div>
+
+				<!-- 发牌堆 - 右下角 -->
 				<div class="stock-area">
 					<button
 						class="stock-pile"
@@ -1136,9 +1148,9 @@
 
 	.bottom-area {
 		display: flex;
-		justify-content: flex-end;
+		justify-content: space-between;
 		align-items: flex-end;
-		padding-top: 8px;
+		padding-top: 16px;
 		flex-shrink: 0;
 	}
 
@@ -1285,6 +1297,7 @@
 		align-items: center;
 		gap: 8px;
 		padding-bottom: 8px;
+		padding-left: 80px;
 	}
 
 	.stock-pile {
@@ -1292,7 +1305,7 @@
 		width: 95px;
 		height: 138px;
 		border: none;
-		border-radius: 8px;
+		border-radius: 10px;
 		background: transparent;
 		cursor: pointer;
 		padding: 0;
@@ -1301,32 +1314,71 @@
 
 	.stock-pile:hover:not(:disabled) {
 		transform: scale(1.08);
-		filter: brightness(1.1);
 	}
 
 	.stock-pile:hover:not(:disabled) .stock-card {
 		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.25),
-			3px 3px 10px rgba(0, 0, 0, 0.5);
+			inset 0 1px 0 rgba(255, 255, 255, 0.3),
+			4px 4px 12px rgba(0, 0, 0, 0.5);
 	}
 
 	.stock-pile:disabled {
 		cursor: not-allowed;
-		opacity: 0.5;
+		opacity: 0.4;
 	}
 
+	/* 发牌堆 - 精美扑克牌背 */
 	.stock-card {
 		position: absolute;
 		width: 95px;
 		height: 138px;
-		border-radius: 8px;
-		background: linear-gradient(135deg, #2e7d32 0%, #388e3c 50%, #2e7d32 100%);
-		border: 3px solid #1b5e20;
+		border-radius: 10px;
+		background: linear-gradient(145deg, #1a5c1a 0%, #2e7d32 25%, #1a5c1a 50%, #2e7d32 75%, #1a5c1a 100%);
+		border: 3px solid #0d3d0d;
 		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.2),
+			inset 0 1px 0 rgba(255, 255, 255, 0.15),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.2),
 			2px 2px 6px rgba(0, 0, 0, 0.4);
-		pointer-events: none;
-		cursor: pointer;
+		overflow: hidden;
+	}
+
+	/* 扑克牌背图案 - 菱形纹理 */
+	.stock-card::before {
+		content: '';
+		position: absolute;
+		inset: 8px;
+		background-image:
+			repeating-linear-gradient(
+				45deg,
+				transparent,
+				transparent 4px,
+				rgba(255, 255, 255, 0.03) 4px,
+				rgba(255, 255, 255, 0.03) 8px
+			),
+			repeating-linear-gradient(
+				-45deg,
+				transparent,
+				transparent 4px,
+				rgba(255, 255, 255, 0.03) 4px,
+				rgba(255, 255, 255, 0.03) 8px
+			);
+		border-radius: 4px;
+	}
+
+	/* 中心花纹 */
+	.stock-card::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 40px;
+		height: 40px;
+		background: rgba(255, 255, 255, 0.08);
+		border-radius: 50%;
+		box-shadow:
+			0 0 0 3px rgba(255, 255, 255, 0.05),
+			0 0 0 6px rgba(255, 255, 255, 0.03);
 	}
 
 	.stock-label {
