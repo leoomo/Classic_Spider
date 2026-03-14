@@ -43,10 +43,13 @@ impl History {
 
     /// 撤销
     pub fn undo(&mut self) -> Option<GameState> {
+        println!("[History] undo called: current_index={}, states_len={}", self.current_index, self.states.len());
         if self.current_index > 0 {
             self.current_index -= 1;
+            println!("[History] undo success: new current_index={}", self.current_index);
             Some(self.states[self.current_index].clone())
         } else {
+            println!("[History] undo failed: already at beginning");
             None
         }
     }
@@ -69,7 +72,9 @@ impl History {
 
     /// 是否可以重做
     pub fn can_redo(&self) -> bool {
-        self.current_index < self.states.len() - 1
+        let result = self.current_index < self.states.len() - 1;
+        println!("[History] can_redo: current_index={}, states_len={}, result={}", self.current_index, self.states.len(), result);
+        result
     }
 
     /// 调试信息
