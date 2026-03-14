@@ -968,12 +968,8 @@
 									</div>
 								</div>
 							{:else}
-								<!-- 空位 - 显示占位符 -->
-								<div class="foundation-placeholder">
-									<span class="placeholder-k">K</span>
-									<span class="placeholder-arrow">↓</span>
-									<span class="placeholder-a">A</span>
-								</div>
+								<!-- 空位 - 无内容 -->
+								<div class="foundation-placeholder"></div>
 							{/if}
 						</div>
 					{/each}
