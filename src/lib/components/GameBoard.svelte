@@ -1022,27 +1022,28 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 12px 24px;
+		padding: 8px 16px;
 		background: rgba(0, 0, 0, 0.35);
 		backdrop-filter: blur(12px);
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 		flex-shrink: 0;
+		gap: 12px;
 	}
 
 	.game-info {
 		display: flex;
-		gap: 40px;
+		gap: 24px;
 	}
 
 	.info-item {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 2px;
+		gap: 1px;
 	}
 
 	.label {
-		font-size: 18px;
+		font-size: 14px;
 		color: rgba(255, 255, 255, 0.8);
 		text-transform: uppercase;
 		letter-spacing: 1px;
@@ -1050,27 +1051,27 @@
 	}
 
 	.value {
-		font-size: 38px;
+		font-size: 28px;
 		font-weight: 700;
 		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 	}
 
 	.actions {
 		display: flex;
-		gap: 16px;
+		gap: 8px;
 	}
 
 	.btn {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 10px;
-		padding: 20px 36px;
-		border: 3px solid transparent;
-		border-radius: 14px;
+		gap: 8px;
+		padding: 12px 24px;
+		border: 2px solid transparent;
+		border-radius: 10px;
 		background: rgba(255, 255, 255, 0.2);
 		color: white;
-		font-size: 22px;
+		font-size: 18px;
 		font-weight: 700;
 		cursor: pointer;
 		transition: all 0.2s ease-out;
@@ -1117,15 +1118,15 @@
 	}
 
 	.mute-btn, .undo-btn, .redo-btn, .hint-btn {
-		padding: 20px;
-		min-width: 64px;
-		min-height: 64px;
+		padding: 12px;
+		min-width: 48px;
+		min-height: 48px;
 		justify-content: center;
 	}
 
 	.mute-btn svg, .undo-btn svg, .redo-btn svg, .hint-btn svg {
-		width: 32px;
-		height: 32px;
+		width: 24px;
+		height: 24px;
 	}
 
 	.game-board {
@@ -1148,20 +1149,20 @@
 
 	.bottom-area {
 		display: flex;
-		justify-content: space-between;
+		justify-content: flex-start;
 		align-items: flex-end;
 		padding-top: 16px;
 		flex-shrink: 0;
 		padding-left: 8px;
 		padding-right: 8px;
+		gap: 16px;
 	}
 
 	.foundation-area {
 		display: flex;
-		justify-content: center;
+		justify-content: flex-start;
 		gap: 6px;
 		flex-wrap: wrap;
-		max-width: 50%;
 	}
 
 	.foundation {
@@ -1302,6 +1303,7 @@
 		gap: 8px;
 		padding-bottom: 8px;
 		flex-shrink: 0;
+		margin-left: auto;
 	}
 
 	.stock-pile {
