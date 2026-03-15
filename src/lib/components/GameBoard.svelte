@@ -18,6 +18,7 @@
 	let showConfetti = $state(true); // 控制庆祝动画
 	let lastFocusedElement: HTMLElement | null = null; // 焦点管理 - 记录打开对话框前聚焦的元素
 	let dealError = $state<string | null>(null); // 发牌错误提示（非侵入式）
+	let hasShownVictory = $state(false); // 每局只显示一次胜利弹窗
 
 	// 拖拽状态
 	let dragState = $state<{
@@ -253,6 +254,7 @@
 			error = null;
 			showDifficultyModal = false;
 			showVictoryModal = false;
+			hasShownVictory = false; // 重置胜利弹窗标志
 			soundManager.play('shuffle');
 			gameState = await invoke<GameState>('new_game', { difficulty });
 			selectedCard = null;
@@ -300,6 +302,7 @@
 		try {
 			isLoading = true;
 			error = null;
+			hasShownVictory = false; // 重置胜利弹窗标志
 			gameState = await invoke<GameState>('load_game');
 			selectedCard = null;
 			showRestorePrompt = false;
