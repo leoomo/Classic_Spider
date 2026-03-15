@@ -51,7 +51,7 @@ jobs:
             ### 系统要求
             - Windows 10 或更高版本
             - macOS 10.13 或更高版本
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
 
   build-macos:
@@ -84,5 +84,5 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Classic Spider v__VERSION__'
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
