@@ -31,3 +31,6 @@ npm-debug.log*
 !static/*.png
 !docs/*.png
 !src-tauri/icons/*.png
+
+# AI Planning
+ai-planning/
