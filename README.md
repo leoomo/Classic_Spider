@@ -33,9 +33,9 @@
 
 ## 📥 下载安装
 
-[![Download](https://img.shields.io/badge/Download-v0.1.0-green?logo=github)](https://github.com/leoomo/Classic_Spider/releases/download/v0.1.0/Classic.Spider_0.1.0_x64-setup.exe)
+[![Download](https://img.shields.io/badge/Download-v0.2.3-green?logo=github)](https://github.com/leoomo/Classic_Spider/releases/latest)
 
-> [点击下载 Windows 版](https://github.com/leoomo/Classic_Spider/releases/download/v0.1.0/Classic.Spider_0.1.0_x64-setup.exe) · macOS / Linux 即将推出
+> [点击下载 Windows 版](https://github.com/leoomo/Classic_Spider/releases/latest) · macOS / Linux 即将推出
 
 ---
 
