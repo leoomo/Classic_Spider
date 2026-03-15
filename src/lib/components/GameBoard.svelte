@@ -815,7 +815,8 @@
 
 	// Victory detection
 	$effect(() => {
-		if (gameState?.completed === 8 && !showVictoryModal) {
+		if (gameState?.completed === 8 && !showVictoryModal && !hasShownVictory && !isLoading) {
+			hasShownVictory = true;
 			showVictoryModal = true;
 			showConfetti = true;
 			soundManager.play('win');
@@ -895,6 +896,15 @@
 			</span>
 		</div>
 		<div class="actions">
+			<!-- 提示按钮 -->
+			<button class="btn hint-btn" onclick={handleHint} disabled={isLoading} title="显示提示">
+				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
+					<path d="M9 18h6"/>
+					<path d="M10 22h4"/>
+				</svg>
+				<span>提示</span>
+			</button>
 			<button class="btn mute-btn" onclick={toggleMute} title={isMuted ? '开启音效' : '静音'}>
 				{#if isMuted}
 					<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
@@ -918,24 +928,16 @@
 				</svg>
 				<span>重做</span>
 			</button>
-			<!-- 提示按钮 -->
-			<button class="btn hint-btn" onclick={handleHint} disabled={isLoading} title="显示提示">
-				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
-					<path d="M9 18h6"/>
-					<path d="M10 22h4"/>
-				</svg>
-				<span>提示</span>
-			</button>
 			<!-- 新游戏按钮 -->
 			<button class="btn primary" onclick={openNewGameModal}>
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
 				新游戏
 			</button>
-			<!-- 调试按钮 -->
+			<!-- 调试按钮已禁用
 			<button class="btn debug-btn" onclick={() => debugMode = !debugMode} title="切换调试模式">
 				🔧
 			</button>
+			-->
 		</div>
 	</header>
 
@@ -1189,12 +1191,13 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 8px 16px;
+		padding: 6px 16px;
 		background: rgba(0, 0, 0, 0.35);
 		backdrop-filter: blur(12px);
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 		flex-shrink: 0;
 		gap: 12px;
+		min-height: auto;
 	}
 
 	.game-info {
@@ -1218,7 +1221,7 @@
 	}
 
 	.value {
-		font-size: 28px;
+		font-size: 24px;
 		font-weight: 700;
 		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 	}
@@ -1232,19 +1235,19 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 8px;
-		padding: 12px 24px;
+		gap: 6px;
+		padding: 10px 20px;
 		border: 2px solid transparent;
 		border-radius: 10px;
 		background: rgba(255, 255, 255, 0.2);
 		color: white;
-		font-size: 18px;
+		font-size: 16px;
 		font-weight: 700;
 		cursor: pointer;
 		transition: all 0.2s ease-out;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-		min-width: 64px;
-		min-height: 64px;
+		min-width: auto;
+		min-height: auto;
 	}
 
 	.btn:hover:not(:disabled) {
@@ -1285,22 +1288,22 @@
 	}
 
 	.mute-btn, .undo-btn, .redo-btn, .hint-btn {
-		padding: 12px;
-		min-width: 48px;
-		min-height: 48px;
+		padding: 10px;
+		min-width: 44px;
+		min-height: 44px;
 		justify-content: center;
 	}
 
 	.mute-btn svg, .undo-btn svg, .redo-btn svg, .hint-btn svg {
-		width: 24px;
-		height: 24px;
+		width: 22px;
+		height: 22px;
 	}
 
 	.game-board {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		padding: 8px;
+		padding: 12px 8px 8px;
 		overflow: hidden;
 		min-height: 0;
 	}
@@ -1318,7 +1321,7 @@
 		display: flex;
 		justify-content: flex-start;
 		align-items: flex-end;
-		padding-top: 16px;
+		padding-top: 10px;
 		flex-shrink: 0;
 		padding-left: 8px;
 		padding-right: 8px;
@@ -1333,8 +1336,8 @@
 	}
 
 	.foundation {
-		width: 65px;
-		height: 90px;
+		width: 60px;
+		height: 84px;
 		border-radius: 8px;
 		display: flex;
 		flex-direction: column;
@@ -1354,10 +1357,10 @@
 
 	.foundation:not(.filled)::after {
 		content: 'K  A';
-		font-size: 20px;
+		font-size: 18px;
 		font-weight: 700;
 		color: rgba(255, 255, 255, 0.5);
-		letter-spacing: 4px;
+		letter-spacing: 3px;
 	}
 
 	.foundation-placeholder {
@@ -1467,16 +1470,16 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 8px;
-		padding-bottom: 8px;
+		gap: 6px;
+		padding-bottom: 4px;
 		flex-shrink: 0;
 		margin-left: auto;
 	}
 
 	.stock-pile {
 		position: relative;
-		width: 85px;
-		height: 124px;
+		width: 78px;
+		height: 114px;
 		border: none;
 		border-radius: 10px;
 		background: transparent;
@@ -1503,8 +1506,8 @@
 	/* 发牌堆 - 精美扑克牌背 */
 	.stock-card {
 		position: absolute;
-		width: 85px;
-		height: 124px;
+		width: 78px;
+		height: 114px;
 		border-radius: 10px;
 		background: linear-gradient(145deg, #1a5c1a 0%, #2e7d32 25%, #1a5c1a 50%, #2e7d32 75%, #1a5c1a 100%);
 		border: 3px solid #0d3d0d;
@@ -1940,43 +1943,9 @@
 	}
 
 	/* 响应式优化 - 适配不同屏幕尺寸 */
-	@media (max-width: 1366px) {
+	@media (max-width: 1440px) {
 		.foundation-area {
 			gap: 4px;
-		}
-
-		.foundation {
-			width: 58px;
-			height: 80px;
-		}
-
-		.foundation:not(.filled)::after {
-			font-size: 14px;
-			letter-spacing: 2px;
-		}
-
-		.stock-pile {
-			width: 75px;
-			height: 110px;
-		}
-
-		.stock-card {
-			width: 75px;
-			height: 110px;
-		}
-
-		.stock-label {
-			font-size: 14px;
-		}
-	}
-
-	@media (max-width: 1200px) {
-		.columns {
-			gap: 2px;
-		}
-
-		.foundation-area {
-			gap: 3px;
 		}
 
 		.foundation {
@@ -1990,78 +1959,454 @@
 		}
 
 		.stock-pile {
-			width: 65px;
-			height: 95px;
+			width: 64px;
+			height: 94px;
 		}
 
 		.stock-card {
-			width: 65px;
-			height: 95px;
+			width: 64px;
+			height: 94px;
 		}
 
 		.stock-label {
+			font-size: 11px;
+		}
+
+		.stock-area {
+			gap: 4px;
+			padding-bottom: 3px;
+		}
+	}
+
+	@media (max-width: 1366px) {
+		.toolbar {
+			padding: 6px 12px;
+		}
+
+		.label {
 			font-size: 12px;
+		}
+
+		.value {
+			font-size: 22px;
+		}
+
+		.btn {
+			padding: 10px 18px;
+			font-size: 16px;
+		}
+
+		.mute-btn, .undo-btn, .redo-btn, .hint-btn {
+			min-width: 40px;
+			min-height: 40px;
+			padding: 10px;
+		}
+
+		.foundation-area {
+			gap: 4px;
+		}
+
+		.foundation {
+			width: 50px;
+			height: 70px;
+		}
+
+		.foundation:not(.filled)::after {
+			font-size: 12px;
+			letter-spacing: 1px;
+		}
+
+		.stock-pile {
+			width: 62px;
+			height: 90px;
+		}
+
+		.stock-card {
+			width: 62px;
+			height: 90px;
+		}
+
+		.stock-label {
+			font-size: 11px;
+		}
+
+		.stock-area {
+			gap: 4px;
+			padding-bottom: 3px;
+		}
+
+		.game-board {
+			padding: 10px 6px 6px;
+		}
+
+		.bottom-area {
+			padding-top: 8px;
+		}
+	}
+
+	@media (max-width: 1200px) {
+		.toolbar {
+			padding: 6px 12px;
+		}
+
+		.label {
+			font-size: 12px;
+		}
+
+		.value {
+			font-size: 22px;
+		}
+
+		.btn {
+			padding: 10px 18px;
+			font-size: 16px;
+		}
+
+		.mute-btn, .undo-btn, .redo-btn, .hint-btn {
+			min-width: 40px;
+			min-height: 40px;
+			padding: 10px;
+		}
+
+		.columns {
+			gap: 2px;
+		}
+
+		.foundation-area {
+			gap: 3px;
+		}
+
+		.foundation {
+			width: 50px;
+			height: 70px;
+		}
+
+		.foundation:not(.filled)::after {
+			font-size: 11px;
+			letter-spacing: 1px;
+		}
+
+		.stock-pile {
+			width: 58px;
+			height: 85px;
+		}
+
+		.stock-card {
+			width: 58px;
+			height: 85px;
+		}
+
+		.stock-label {
+			font-size: 10px;
+		}
+
+		.stock-area {
+			gap: 3px;
+			padding-bottom: 2px;
+		}
+
+		.game-board {
+			padding: 10px 6px 6px;
+		}
+
+		.bottom-area {
+			padding-top: 8px;
 		}
 	}
 
 	@media (max-width: 1024px) {
 		.toolbar {
-			padding: 10px 16px;
+			padding: 6px 12px;
+			gap: 8px;
+		}
+
+		.game-info {
+			gap: 12px;
+		}
+
+		.label {
+			font-size: 11px;
+		}
+
+		.value {
+			font-size: 20px;
 		}
 
 		.btn {
-			padding: 12px 20px;
-			font-size: 18px;
+			padding: 8px 14px;
+			font-size: 15px;
+			min-width: auto;
+			min-height: auto;
 		}
 
 		.mute-btn, .undo-btn, .redo-btn, .hint-btn {
-			min-width: 48px;
-			min-height: 48px;
-			padding: 12px;
+			min-width: 36px;
+			min-height: 36px;
+			padding: 8px;
+		}
+
+		.mute-btn svg, .undo-btn svg, .redo-btn svg, .hint-btn svg {
+			width: 20px;
+			height: 20px;
+		}
+
+		.actions {
+			gap: 6px;
 		}
 
 		.columns {
 			gap: 1px;
 			padding: 0 4px;
 		}
+
+		.foundation {
+			width: 50px;
+			height: 70px;
+		}
+
+		.foundation:not(.filled)::after {
+			font-size: 11px;
+			letter-spacing: 1px;
+		}
+
+		.stock-pile {
+			width: 58px;
+			height: 85px;
+		}
+
+		.stock-card {
+			width: 58px;
+			height: 85px;
+		}
+
+		.stock-label {
+			font-size: 10px;
+		}
+
+		.stock-area {
+			gap: 3px;
+			padding-bottom: 2px;
+		}
+
+		.game-board {
+			padding: 8px 4px 4px;
+		}
+
+		.bottom-area {
+			padding-top: 8px;
+		}
+	}
+
+	@media (max-width: 900px) {
+		.toolbar {
+			padding: 4px 8px;
+			gap: 6px;
+		}
+
+		.game-info {
+			gap: 8px;
+		}
+
+		.label {
+			font-size: 10px;
+			letter-spacing: 0.5px;
+		}
+
+		.value {
+			font-size: 16px;
+		}
+
+		.btn {
+			padding: 6px 10px;
+			font-size: 13px;
+			gap: 4px;
+			border-radius: 6px;
+		}
+
+		.mute-btn, .undo-btn, .redo-btn, .hint-btn {
+			min-width: 32px;
+			min-height: 32px;
+			padding: 6px;
+		}
+
+		.mute-btn svg, .undo-btn svg, .redo-btn svg, .hint-btn svg {
+			width: 18px;
+			height: 18px;
+		}
+
+		.actions {
+			gap: 4px;
+		}
+
+		.foundation-area {
+			gap: 2px;
+		}
+
+		.foundation {
+			width: 44px;
+			height: 60px;
+		}
+
+		.foundation:not(.filled)::after {
+			font-size: 9px;
+			letter-spacing: 1px;
+		}
+
+		.stock-pile {
+			width: 52px;
+			height: 76px;
+		}
+
+		.stock-card {
+			width: 52px;
+			height: 76px;
+		}
+
+		.stock-label {
+			font-size: 9px;
+		}
+
+		.stock-area {
+			gap: 2px;
+			padding-bottom: 2px;
+		}
+
+		.info-item {
+			padding: 4px 6px;
+		}
+
+		.info-item .label {
+			font-size: 10px;
+		}
+
+		.info-item .value {
+			font-size: 14px;
+		}
+
+		.game-board {
+			padding: 4px;
+		}
+
+		.bottom-area {
+			padding-top: 4px;
+			padding-left: 4px;
+			padding-right: 4px;
+			gap: 8px;
+		}
 	}
 
 	@media (max-width: 768px) {
 		.toolbar {
-			flex-direction: column;
+			flex-direction: row;
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: 6px;
+			padding: 6px 8px;
+		}
+
+		.game-info {
 			gap: 12px;
-			padding: 12px;
+			order: -1;
+			width: 100%;
+			justify-content: center;
+		}
+
+		.label {
+			font-size: 9px;
+		}
+
+		.value {
+			font-size: 14px;
 		}
 
 		.actions {
-			gap: 8px;
+			gap: 4px;
+			width: 100%;
+			justify-content: center;
 		}
 
 		.btn {
-			padding: 10px 16px;
-			font-size: 16px;
+			padding: 5px 8px;
+			font-size: 11px;
+			gap: 3px;
+			border-radius: 5px;
+		}
+
+		.btn span {
+			display: none;
 		}
 
 		.mute-btn, .undo-btn, .redo-btn, .hint-btn {
-			min-width: 44px;
-			min-height: 44px;
-			padding: 10px;
+			min-width: 32px;
+			min-height: 32px;
+			padding: 6px;
+		}
+
+		.mute-btn svg, .undo-btn svg, .redo-btn svg, .hint-btn svg {
+			width: 18px;
+			height: 18px;
+		}
+
+		.btn.primary {
+			padding: 5px 12px;
+		}
+
+		.btn.primary span {
+			display: inline;
 		}
 
 		.columns {
 			gap: 0px;
-			transform: scale(0.95);
+			transform: scale(0.92);
 			transform-origin: top center;
 		}
 
 		.bottom-area {
-			flex-direction: column;
-			align-items: center;
-			gap: 16px;
+			flex-direction: row;
+			justify-content: center;
+			gap: 12px;
+			padding: 4px;
 		}
 
 		.stock-area {
-			order: -1;
+			order: 0;
+		}
+
+		.foundation-area {
+			gap: 2px;
+		}
+
+		.foundation {
+			width: 36px;
+			height: 50px;
+		}
+
+		.foundation:not(.filled)::after {
+			font-size: 7px;
+			letter-spacing: 0;
+		}
+
+		.stock-pile {
+			width: 46px;
+			height: 68px;
+		}
+
+		.stock-card {
+			width: 46px;
+			height: 68px;
+		}
+
+		.stock-label {
+			font-size: 8px;
+		}
+
+		.stock-area {
+			gap: 2px;
+			padding-bottom: 2px;
+		}
+
+		.game-board {
+			padding: 2px;
 		}
 	}
 

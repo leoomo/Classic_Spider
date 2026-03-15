@@ -98,7 +98,7 @@
 <style>
 	.column {
 		position: relative;
-		min-height: 420px;
+		min-height: 360px;
 		width: 105px;
 		padding: 4px;
 		flex-shrink: 0;
@@ -218,7 +218,7 @@
 	@media (max-width: 1200px) {
 		.column {
 			width: 98px;
-			min-height: 380px;
+			min-height: 320px;
 			padding: 3px;
 		}
 
@@ -235,7 +235,7 @@
 	@media (max-width: 1024px) {
 		.column {
 			width: 90px;
-			min-height: 350px;
+			min-height: 280px;
 			padding: 2px;
 		}
 
@@ -249,19 +249,37 @@
 		}
 	}
 
-	@media (max-width: 768px) {
+	@media (max-width: 900px) {
 		.column {
-			width: 82px;
-			min-height: 320px;
+			width: 75px;
+			min-height: 200px;
+			padding: 1px;
 		}
 
 		.empty-slot {
-			width: 72px;
-			height: 105px;
+			width: 65px;
+			height: 95px;
 		}
 
 		.placeholder {
-			font-size: 34px;
+			font-size: 30px;
+		}
+	}
+
+	@media (max-width: 768px) {
+		.column {
+			width: 68px;
+			min-height: 180px;
+			padding: 1px;
+		}
+
+		.empty-slot {
+			width: 58px;
+			height: 85px;
+		}
+
+		.placeholder {
+			font-size: 26px;
 		}
 	}
 </style>
