@@ -98,7 +98,7 @@
 <style>
 	.column {
 		position: relative;
-		min-height: 420px;
+		min-height: 360px;
 		width: 105px;
 		padding: 4px;
 		flex-shrink: 0;
@@ -214,11 +214,11 @@
 		}
 	}
 
-	/* 响应式优化 - 高 DPI/缩放支持 */
-	@media (max-width: 1400px) {
+	/* 响应式优化 */
+	@media (max-width: 1200px) {
 		.column {
 			width: 98px;
-			min-height: 380px;
+			min-height: 320px;
 			padding: 3px;
 		}
 
@@ -232,10 +232,10 @@
 		}
 	}
 
-	@media (max-width: 1200px) {
+	@media (max-width: 1024px) {
 		.column {
 			width: 90px;
-			min-height: 350px;
+			min-height: 280px;
 			padding: 2px;
 		}
 
@@ -249,27 +249,10 @@
 		}
 	}
 
-	@media (max-width: 1024px) {
-		.column {
-			width: 82px;
-			min-height: 320px;
-			padding: 2px;
-		}
-
-		.empty-slot {
-			width: 72px;
-			height: 105px;
-		}
-
-		.placeholder {
-			font-size: 34px;
-		}
-	}
-
 	@media (max-width: 900px) {
 		.column {
 			width: 75px;
-			min-height: 290px;
+			min-height: 200px;
 			padding: 1px;
 		}
 
@@ -286,7 +269,7 @@
 	@media (max-width: 768px) {
 		.column {
 			width: 68px;
-			min-height: 260px;
+			min-height: 180px;
 			padding: 1px;
 		}
 
