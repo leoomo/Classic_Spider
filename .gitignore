@@ -30,3 +30,4 @@ npm-debug.log*
 *.png
 !static/*.png
 !docs/*.png
+!src-tauri/icons/*.png
