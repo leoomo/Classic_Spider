@@ -153,33 +153,55 @@
     box-shadow: none;
   }
 
-  /* 响应式优化 */
-  @media (max-width: 1200px) {
+  /* 响应式优化 - 高 DPI/缩放支持 */
+  @media (max-width: 1400px) {
     .card {
       width: 88px;
       height: 128px;
     }
   }
 
-  @media (max-width: 1024px) {
+  @media (max-width: 1200px) {
     .card {
       width: 80px;
       height: 116px;
     }
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     .card {
       width: 72px;
       height: 105px;
     }
+  }
+
+  @media (max-width: 900px) {
+    .card {
+      width: 65px;
+      height: 95px;
+    }
 
     .card.selected {
-      transform: translateY(-6px);
+      transform: translateY(-4px);
       box-shadow:
-        0 8px 20px rgba(0, 0, 0, 0.35),
-        0 0 0 3px rgba(255, 215, 0, 0.9),
-        0 0 15px rgba(255, 215, 0, 0.4);
+        0 6px 16px rgba(0, 0, 0, 0.35),
+        0 0 0 2px rgba(255, 215, 0, 0.9),
+        0 0 10px rgba(255, 215, 0, 0.4);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .card {
+      width: 58px;
+      height: 85px;
+    }
+
+    .card.selected {
+      transform: translateY(-4px);
+      box-shadow:
+        0 6px 16px rgba(0, 0, 0, 0.35),
+        0 0 0 2px rgba(255, 215, 0, 0.9),
+        0 0 10px rgba(255, 215, 0, 0.4);
     }
   }
 </style>

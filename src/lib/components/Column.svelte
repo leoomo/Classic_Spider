@@ -214,8 +214,8 @@
 		}
 	}
 
-	/* 响应式优化 */
-	@media (max-width: 1200px) {
+	/* 响应式优化 - 高 DPI/缩放支持 */
+	@media (max-width: 1400px) {
 		.column {
 			width: 98px;
 			min-height: 380px;
@@ -232,7 +232,7 @@
 		}
 	}
 
-	@media (max-width: 1024px) {
+	@media (max-width: 1200px) {
 		.column {
 			width: 90px;
 			min-height: 350px;
@@ -249,10 +249,11 @@
 		}
 	}
 
-	@media (max-width: 768px) {
+	@media (max-width: 1024px) {
 		.column {
 			width: 82px;
 			min-height: 320px;
+			padding: 2px;
 		}
 
 		.empty-slot {
@@ -262,6 +263,40 @@
 
 		.placeholder {
 			font-size: 34px;
+		}
+	}
+
+	@media (max-width: 900px) {
+		.column {
+			width: 75px;
+			min-height: 290px;
+			padding: 1px;
+		}
+
+		.empty-slot {
+			width: 65px;
+			height: 95px;
+		}
+
+		.placeholder {
+			font-size: 30px;
+		}
+	}
+
+	@media (max-width: 768px) {
+		.column {
+			width: 68px;
+			min-height: 260px;
+			padding: 1px;
+		}
+
+		.empty-slot {
+			width: 58px;
+			height: 85px;
+		}
+
+		.placeholder {
+			font-size: 26px;
 		}
 	}
 </style>
