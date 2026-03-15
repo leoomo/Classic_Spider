@@ -17,6 +17,7 @@
 	let showVictoryModal = $state(false);
 	let showConfetti = $state(true); // 控制庆祝动画
 	let lastFocusedElement: HTMLElement | null = null; // 焦点管理 - 记录打开对话框前聚焦的元素
+	let dealError = $state<string | null>(null); // 发牌错误提示（非侵入式）
 
 	// 拖拽状态
 	let dragState = $state<{
@@ -655,18 +656,18 @@
 		if (!gameState || isLoading) return;
 
 		if (gameState.stock.length < 10) {
-			error = '没有足够的牌可发';
+			dealError = '没有足够的牌可发';
 			soundManager.play('error');
-			setTimeout(() => { error = null; }, 2000);
+			setTimeout(() => { dealError = null; }, 2000);
 			return;
 		}
 
 		if (gameState.columns.some(col => col.length === 0)) {
-			error = '发牌前，所有列都必须有牌';
+			dealError = '发牌前，所有列都必须有牌';
 			soundManager.play('error');
 			shakeColumn = -1;
 			setTimeout(() => { shakeColumn = null; }, 500);
-			setTimeout(() => { error = null; }, 2000);
+			setTimeout(() => { dealError = null; }, 2000);
 			return;
 		}
 
@@ -1069,6 +1070,9 @@
 
 				<!-- 发牌堆 - 右下角 -->
 				<div class="stock-area">
+					{#if dealError}
+						<div class="deal-error-toast">{dealError}</div>
+					{/if}
 					<button
 						class="stock-pile"
 						disabled={gameState.stock.length === 0}
@@ -1474,6 +1478,36 @@
 		padding-bottom: 4px;
 		flex-shrink: 0;
 		margin-left: auto;
+		position: relative;
+	}
+
+	.deal-error-toast {
+		position: absolute;
+		bottom: 100%;
+		left: 50%;
+		transform: translateX(-50%);
+		background: rgba(244, 67, 54, 0.95);
+		color: white;
+		padding: 8px 16px;
+		border-radius: 8px;
+		font-size: 14px;
+		font-weight: 600;
+		white-space: nowrap;
+		margin-bottom: 8px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+		animation: toast-in 0.3s ease-out;
+		z-index: 100;
+	}
+
+	@keyframes toast-in {
+		from {
+			opacity: 0;
+			transform: translateX(-50%) translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(-50%) translateY(0);
+		}
 	}
 
 	.stock-pile {
@@ -2269,6 +2303,11 @@
 		.stock-area {
 			gap: 2px;
 			padding-bottom: 2px;
+		}
+
+		.deal-error-toast {
+			font-size: 12px;
+			padding: 6px 12px;
 		}
 
 		.info-item {
