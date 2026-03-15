@@ -2,6 +2,7 @@
 	import { onMount, flushSync } from 'svelte';
 	import Column from './Column.svelte';
 	import { soundManager } from '$lib/utils/sound';
+	import { DRAG_THRESHOLD, DRAG_SCALE } from '$lib/utils/dragDrop';
 	import type { GameState, Card, Suit } from '$lib/types/game';
 
 	let gameState = $state<GameState | null>(null);
@@ -23,12 +24,15 @@
 	// 拖拽状态
 	let dragState = $state<{
 		isDragging: boolean;
+		isPending: boolean; // 等待阈值检测
 		fromCol: number;
 		startCardIndex: number;
 		cards: Card[];
 		element: HTMLElement | null;
 		offsetX: number;
 		offsetY: number;
+		startX: number; // 起始位置，用于阈值检测
+		startY: number;
 	} | null>(null);
 	let dropTargetCol = $state<number | null>(null);
 	let dropValid = $state(true);
@@ -401,7 +405,7 @@
 	}
 
 	// 拖拽开始
-	function handleDragStart(colIndex: number, cardIndex: number, event: MouseEvent) {
+	function handleDragPending(colIndex: number, cardIndex: number, event: MouseEvent) {
 
 		if (!gameState || isLoading) {
 
@@ -421,25 +425,42 @@
 		const offsetX = event.clientX - rect.left;
 		const offsetY = event.clientY - rect.top;
 
-		// 创建拖拽视觉元素
-		const dragElement = createDragElement(cards);
-
+		// 设置待定状态，等待阈值检测
 		dragState = {
-			isDragging: true,
+			isDragging: false,
+			isPending: true,
 			fromCol: colIndex,
 			startCardIndex: cardIndex,
 			cards,
-			element: dragElement,
+			element: null,
 			offsetX,
-			offsetY
+			offsetY,
+			startX: event.clientX,
+			startY: event.clientY
 		};
 
 		selectedCard = null;
-		soundManager.play('click');
 
 		// 添加全局鼠标事件
 		document.addEventListener('mousemove', handleDragMove);
 		document.addEventListener('mouseup', handleDragEnd);
+	}
+
+	// 开始真正的拖拽（超过阈值后调用）
+	function startActualDrag(event: MouseEvent) {
+		if (!dragState || !gameState) return;
+
+		// 创建拖拽视觉元素
+		const dragElement = createDragElement(dragState.cards);
+
+		dragState = {
+			...dragState,
+			isDragging: true,
+			isPending: false,
+			element: dragElement
+		};
+
+		soundManager.play('click');
 	}
 
 	// 创建拖拽视觉元素
@@ -447,12 +468,23 @@
 		const container = document.createElement('div');
 		container.className = 'drag-ghost';
 		container.id = 'drag-ghost-active'; // 添加 ID 便于调试
-		// 简化样式，不使用 filter
+
+		// 基础尺寸
+		const baseWidth = 85;
+		const baseHeight = 124;
+		const cardGap = 22;
+		const scaledWidth = baseWidth * DRAG_SCALE;
+		const scaledHeight = baseHeight * DRAG_SCALE;
+		const scaledGap = cardGap * DRAG_SCALE;
+
+		// 简化样式，使用 transform 放大
 		container.style.cssText = `
 			position: fixed;
 			pointer-events: none;
 			z-index: 10000;
-			width: 85px;
+			width: ${scaledWidth}px;
+			transform: scale(${DRAG_SCALE});
+			transform-origin: top left;
 		`;
 
 		cards.forEach((card, index) => {
@@ -462,14 +494,14 @@
 			cardEl.className = 'drag-card';
 			cardEl.style.cssText = `
 				position: absolute;
-				top: ${index * 22}px;
+				top: ${index * cardGap}px;
 				left: 0;
-				width: 85px;
-				height: 124px;
+				width: ${baseWidth}px;
+				height: ${baseHeight}px;
 				background: white;
 				border-radius: 8px;
 				overflow: hidden;
-				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+				box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
 			`;
 
 			// 渲染卡牌SVG
@@ -518,11 +550,30 @@
 	// 拖拽移动 - 使用 DOM 操作直接管理高亮
 	function handleDragMove(event: MouseEvent) {
 		const state = dragState;
-		if (!state?.isDragging || !state.element) return;
+		if (!state) return;
+
+		// 如果是待定状态，先检测阈值
+		if (state.isPending) {
+			const dx = event.clientX - state.startX;
+			const dy = event.clientY - state.startY;
+			const distance = Math.sqrt(dx * dx + dy * dy);
+
+			if (distance >= DRAG_THRESHOLD) {
+				// 超过阈值，开始真正的拖拽
+				startActualDrag(event);
+			} else {
+				// 未超过阈值，继续等待
+				return;
+			}
+		}
+
+		// 重新获取状态（可能已被 startActualDrag 更新）
+		const currentState = dragState;
+		if (!currentState?.isDragging || !currentState.element) return;
 
 		// 更新拖拽元素位置
-		state.element.style.left = `${event.clientX - state.offsetX}px`;
-		state.element.style.top = `${event.clientY - state.offsetY}px`;
+		currentState.element.style.left = `${event.clientX - currentState.offsetX}px`;
+		currentState.element.style.top = `${event.clientY - currentState.offsetY}px`;
 
 		// 检测目标列
 		const targetCol = getColumnAtPosition(event.clientX, event.clientY);
@@ -534,7 +585,7 @@
 			colElements.forEach((col, index) => {
 				col.classList.remove('drop-target-valid', 'drop-target-invalid');
 				if (index === targetCol && targetCol >= 0) {
-					const isValid = isValidDrop(state.cards, targetCol);
+					const isValid = isValidDrop(currentState.cards, targetCol);
 					col.classList.add(isValid ? 'drop-target-valid' : 'drop-target-invalid');
 				}
 			});
@@ -542,7 +593,7 @@
 
 		// 同时更新响应式状态
 		dropTargetCol = targetCol;
-		dropValid = targetCol >= 0 && isValidDrop(state.cards, targetCol);
+		dropValid = targetCol >= 0 && isValidDrop(currentState.cards, targetCol);
 	}
 
 	// 获取鼠标位置下方的列
@@ -1040,7 +1091,7 @@
                         hintStartIndex={hintCards?.fromCol === index ? hintCards.startIdx : null}
                         isHintTarget={hintCards?.toCol === index}
                         onCardClick={(cardIndex) => handleCardClick(index, cardIndex)}
-                        onDragStart={(colIdx, cardIdx, evt) => handleDragStart(colIdx, cardIdx, evt)}
+                        onDragPending={(colIdx, cardIdx, evt) => handleDragPending(colIdx, cardIdx, evt)}
                         shake={shakeColumn === index}
                         isDropTarget={dropTargetCol === index}
                         dropValid={dropValid}

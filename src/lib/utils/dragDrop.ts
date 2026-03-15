@@ -1,8 +1,13 @@
 // 拖拽系统 - 蜘蛛纸牌
 // 提供流畅的拖拽移动体验
 
+// 老年人友好配置
+export const DRAG_THRESHOLD = 10; // 像素，移动超过此距离才触发拖拽
+export const DRAG_SCALE = 1.15; // 拖拽时卡牌放大比例 (15%)
+
 export interface DragState {
 	isDragging: boolean;
+	isPending: boolean; // 等待阈值检测
 	fromCol: number;
 	startCardIndex: number;
 	cards: Array<{ suit: string; value: number }>;
@@ -22,6 +27,7 @@ export interface DropTarget {
 export function createDragState(): DragState {
 	return {
 		isDragging: false,
+		isPending: false,
 		fromCol: -1,
 		startCardIndex: -1,
 		cards: [],

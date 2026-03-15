@@ -9,13 +9,13 @@
 		hintStartIndex?: number | null;
 		isHintTarget?: boolean;
 		onCardClick: (cardIndex: number) => void;
-		onDragStart?: (colIndex: number, cardIndex: number, event: MouseEvent) => void;
+		onDragPending?: (colIndex: number, cardIndex: number, event: MouseEvent) => void;
 		shake?: boolean;
 		isDropTarget?: boolean;
 		dropValid?: boolean;
 	}
 
-	let { cards = [], columnIndex, selectedIndex, hintStartIndex = null, isHintTarget = false, onCardClick, onDragStart, shake = false, isDropTarget = false, dropValid = true }: Props = $props();
+	let { cards = [], columnIndex, selectedIndex, hintStartIndex = null, isHintTarget = false, onCardClick, onDragPending, shake = false, isDropTarget = false, dropValid = true }: Props = $props();
 
 	// 计算每张牌的偏移位置（面朝上的卡牌间距更大）
 	function getCardOffset(index: number): number {
@@ -45,8 +45,8 @@
 			}
 		}
 
-		if (canDrag && onDragStart) {
-			onDragStart(columnIndex, cardIndex, event);
+		if (canDrag && onDragPending) {
+			onDragPending(columnIndex, cardIndex, event);
 		}
 	}
 
@@ -161,19 +161,33 @@
 		90%, 100% { transform: translateX(0); }
 	}
 
-	/* 拖拽目标高亮 - 更明显的反馈 */
+	/* 拖拽目标高亮 - 老年人友好的增强反馈 */
 	.column.drop-target-valid {
-		background: rgba(76, 175, 80, 0.2);
+		background: rgba(76, 175, 80, 0.35);
 		box-shadow:
-			inset 0 0 0 4px rgba(76, 175, 80, 0.8),
-			0 0 15px rgba(76, 175, 80, 0.3);
+			inset 0 0 0 6px rgba(76, 175, 80, 1),
+			0 0 30px rgba(76, 175, 80, 0.5);
+		animation: valid-pulse 0.8s ease-in-out infinite;
+	}
+
+	@keyframes valid-pulse {
+		0%, 100% {
+			box-shadow:
+				inset 0 0 0 6px rgba(76, 175, 80, 1),
+				0 0 30px rgba(76, 175, 80, 0.5);
+		}
+		50% {
+			box-shadow:
+				inset 0 0 0 8px rgba(76, 175, 80, 1),
+				0 0 45px rgba(76, 175, 80, 0.7);
+		}
 	}
 
 	.column.drop-target-invalid {
-		background: rgba(244, 67, 54, 0.12);
+		background: rgba(244, 67, 54, 0.25);
 		box-shadow:
-			inset 0 0 0 4px rgba(244, 67, 54, 0.6),
-			0 0 15px rgba(244, 67, 54, 0.2);
+			inset 0 0 0 6px rgba(244, 67, 54, 1),
+			0 0 30px rgba(244, 67, 54, 0.5);
 	}
 
 	/* 提示高亮样式 - 更明显但不刺眼 */
