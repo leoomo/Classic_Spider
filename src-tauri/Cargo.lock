@@ -458,7 +458,7 @@ dependencies = [
 
 [[package]]
 name = "classic-spider"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "rand 0.8.5",
  "serde",

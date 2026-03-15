@@ -1483,18 +1483,17 @@
 
 	.deal-error-toast {
 		position: absolute;
-		bottom: 100%;
+		top: 50%;
 		left: 50%;
-		transform: translateX(-50%);
+		transform: translate(-50%, -50%);
 		background: rgba(244, 67, 54, 0.95);
 		color: white;
-		padding: 8px 16px;
+		padding: 10px 20px;
 		border-radius: 8px;
 		font-size: 14px;
 		font-weight: 600;
 		white-space: nowrap;
-		margin-bottom: 8px;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 		animation: toast-in 0.3s ease-out;
 		z-index: 100;
 	}
@@ -1502,11 +1501,11 @@
 	@keyframes toast-in {
 		from {
 			opacity: 0;
-			transform: translateX(-50%) translateY(10px);
+			transform: translate(-50%, -50%) scale(0.9);
 		}
 		to {
 			opacity: 1;
-			transform: translateX(-50%) translateY(0);
+			transform: translate(-50%, -50%) scale(1);
 		}
 	}
 
@@ -2307,7 +2306,8 @@
 
 		.deal-error-toast {
 			font-size: 12px;
-			padding: 6px 12px;
+			padding: 8px 14px;
+			top: 40%;
 		}
 
 		.info-item {
