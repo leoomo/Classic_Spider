@@ -366,8 +366,25 @@
 				setTimeout(() => { shakeColumn = null; }, 500);
 			}
 		} else if (selectedCard.colIndex === colIndex) {
-			// 点击同一列 → 取消选中
-			selectedCard = null;
+			// 点击同一列 → 尝试选中新的卡牌
+			const cardsFromIndex = column.slice(cardIndex);
+			let isValidSequence = true;
+			for (let i = 0; i < cardsFromIndex.length - 1; i++) {
+				if (cardsFromIndex[i].suit !== cardsFromIndex[i + 1].suit ||
+					cardsFromIndex[i].value !== cardsFromIndex[i + 1].value + 1) {
+					isValidSequence = false;
+					break;
+				}
+			}
+
+			if (isValidSequence) {
+				selectedCard = { colIndex, cardIndex };
+				soundManager.play('click');
+			} else {
+				soundManager.play('error');
+				shakeColumn = colIndex;
+				setTimeout(() => { shakeColumn = null; }, 500);
+			}
 		} else {
 			// 点击另一列 → 尝试移动
 			await executeMove(selectedCard.colIndex, selectedCard.cardIndex, colIndex);
