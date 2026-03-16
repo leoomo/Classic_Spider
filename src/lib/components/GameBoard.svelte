@@ -735,6 +735,9 @@
 	async function handleDeal() {
 		if (!gameState || isLoading) return;
 
+		// 清空选中状态
+		selectedCard = null;
+
 		if (gameState.stock.length < 10) {
 			dealError = '没有足够的牌可发';
 			soundManager.play('error');
