@@ -3,3 +3,4 @@ pub mod deck;
 pub mod state;
 pub mod rules;
 pub mod history;
+pub mod stats;

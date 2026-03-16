@@ -3,7 +3,7 @@
 	import Column from './Column.svelte';
 	import { soundManager } from '$lib/utils/sound';
 	import { DRAG_THRESHOLD, DRAG_SCALE } from '$lib/utils/dragDrop';
-	import type { GameState, Card, Suit } from '$lib/types/game';
+	import type { GameState, Card, Suit, GameStats } from '$lib/types/game';
 
 	let gameState = $state<GameState | null>(null);
 	let selectedCard = $state<{ colIndex: number; cardIndex: number } | null>(null);
@@ -20,6 +20,12 @@
 	let lastFocusedElement: HTMLElement | null = null; // 焦点管理 - 记录打开对话框前聚焦的元素
 	let dealError = $state<string | null>(null); // 发牌错误提示（非侵入式）
 	let hasShownVictory = $state(false); // 每局只显示一次胜利弹窗
+
+	// 排行榜状态
+	let showLeaderboard = $state(false);
+	let currentStats = $state<GameStats | null>(null);
+	let selectedLeaderboardTab = $state(0); // 0-2 对应难度 1-3
+	let lastGameRank = $state<number | null>(null); // 上局游戏排名
 
 	// 拖拽状态
 	let dragState = $state<{
@@ -80,6 +86,18 @@
 				return Promise.resolve(false as T);
 			case 'has_saved_game':
 				return Promise.resolve(false as T);
+			case 'get_stats':
+				return Promise.resolve({
+					leaderboards: [{ entries: [] }, { entries: [] }, { entries: [] }],
+					games_played: [0, 0, 0],
+					games_won: [0, 0, 0]
+				} as T);
+			case 'record_game_result':
+				return Promise.resolve([{
+					leaderboards: [{ entries: [] }, { entries: [] }, { entries: [] }],
+					games_played: [0, 0, 0],
+					games_won: [0, 0, 0]
+				}, 1] as T);
 		case 'get_hint': {
 			// mock hint logic
 			if (!gameState) return Promise.resolve(null as T);
@@ -814,6 +832,57 @@
 		}
 	}
 
+	// ============== 排行榜功能 ==============
+
+	async function fetchStats() {
+		try {
+			currentStats = await invoke<GameStats>('get_stats');
+		} catch (e) {
+			console.error('Failed to fetch stats:', e);
+			// 使用默认值
+			currentStats = {
+				leaderboards: [{ entries: [] }, { entries: [] }, { entries: [] }],
+				games_played: [0, 0, 0],
+				games_won: [0, 0, 0]
+			};
+		}
+	}
+
+	async function recordGameResult() {
+		if (!gameState) return;
+		try {
+			const [stats, rank] = await invoke<[GameStats, number | null]>('record_game_result', {
+				difficulty: gameState.difficulty,
+				score: gameState.score,
+				moves: gameState.moves,
+				won: true
+			});
+			currentStats = stats;
+			lastGameRank = rank;
+		} catch (e) {
+			console.error('Failed to record game result:', e);
+		}
+	}
+
+	function openLeaderboard() {
+		selectedLeaderboardTab = (gameState?.difficulty ?? 1) - 1;
+		showLeaderboard = true;
+		fetchStats();
+	}
+
+	function closeLeaderboard() {
+		showLeaderboard = false;
+	}
+
+	function getWinRate(difficulty: number): string {
+		if (!currentStats) return '0.0';
+		const idx = difficulty - 1;
+		const played = currentStats.games_played[idx];
+		const won = currentStats.games_won[idx];
+		if (played === 0) return '0.0';
+		return ((won / played) * 100).toFixed(1);
+	}
+
 	onMount(async () => {
 		soundManager.preload();
 		try {
@@ -875,6 +944,8 @@
 			showVictoryModal = true;
 			showConfetti = true;
 			soundManager.play('win');
+			// 记录游戏结果到排行榜
+			recordGameResult();
 			// 5秒后停止动画，减少对光敏用户的影响
 			setTimeout(() => {
 				showConfetti = false;
@@ -983,6 +1054,18 @@
 				</svg>
 				<span>重做</span>
 			</button>
+			<!-- 排行榜按钮 -->
+			<button class="btn" onclick={openLeaderboard} title="查看排行榜">
+				<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+					<path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+					<path d="M4 22h16"/>
+					<path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+					<path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+					<path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+				</svg>
+				<span>排行榜</span>
+			</button>
 			<!-- 新游戏按钮 -->
 			<button class="btn primary" onclick={openNewGameModal}>
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
@@ -1043,6 +1126,76 @@
 			</div>
 		{/if}
 
+		<!-- 排行榜模态框 -->
+		{#if showLeaderboard}
+			<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+			<div class="modal-overlay" onclick={closeLeaderboard} role="button" tabindex="-1" onkeydown={(e) => e.key === 'Escape' && closeLeaderboard()}>
+				<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+				<div class="modal leaderboard-modal" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="leaderboard-title" tabindex="-1">
+					<h2 class="modal-title" id="leaderboard-title">🏆 排行榜</h2>
+
+					<!-- 难度标签页 -->
+					<div class="leaderboard-tabs">
+						{#each difficultyOptions as option, idx}
+							<button
+								class="leaderboard-tab"
+								class:active={selectedLeaderboardTab === idx}
+								onclick={() => selectedLeaderboardTab = idx}
+							>
+								{option.name}
+							</button>
+						{/each}
+					</div>
+
+					<!-- 排行榜内容 -->
+					<div class="leaderboard-content">
+						{#if currentStats}
+							{@const entries = currentStats.leaderboards[selectedLeaderboardTab].entries}
+							{#if entries.length === 0}
+								<div class="leaderboard-empty">
+									暂无记录，快去玩一局吧！
+								</div>
+							{:else}
+								<div class="leaderboard-list">
+									{#each entries as entry}
+										<div class="leaderboard-entry" class:highlight={lastGameRank === entry.rank && gameState?.difficulty === selectedLeaderboardTab + 1}>
+											<span class="entry-rank">
+												{#if entry.rank === 1}
+													🥇
+												{:else if entry.rank === 2}
+													🥈
+												{:else if entry.rank === 3}
+													🥉
+												{:else}
+													#{entry.rank}
+												{/if}
+											</span>
+											<span class="entry-score">{entry.score}分</span>
+											<span class="entry-moves">{entry.moves}步</span>
+											<span class="entry-date">{entry.date}</span>
+										</div>
+									{/each}
+								</div>
+							{/if}
+
+							<!-- 胜率统计 -->
+							<div class="leaderboard-stats">
+								<div class="stats-row">
+									<span>总场次: {currentStats.games_played[selectedLeaderboardTab]}</span>
+									<span>胜场: {currentStats.games_won[selectedLeaderboardTab]}</span>
+									<span>胜率: {getWinRate(selectedLeaderboardTab + 1)}%</span>
+								</div>
+							</div>
+						{/if}
+					</div>
+
+					<button class="btn cancel-btn" onclick={closeLeaderboard}>
+						关闭
+					</button>
+				</div>
+			</div>
+		{/if}
+
 		<!-- 胜利庆祝模态框 -->
 		{#if showVictoryModal}
 			<div class="victory-overlay">
@@ -1063,7 +1216,15 @@
 							<span class="stat-value">{gameState?.moves}</span>
 						</div>
 					</div>
+					{#if lastGameRank}
+						<div class="victory-rank">
+							🏆 排名第 <strong>#{lastGameRank}</strong> 名！
+						</div>
+					{/if}
 					<div class="victory-buttons">
+						<button class="btn" onclick={openLeaderboard}>
+							排行榜
+						</button>
 						<button class="btn primary" onclick={openNewGameModal}>
 							再来一局
 						</button>
@@ -2019,6 +2180,126 @@
 		display: flex;
 		justify-content: center;
 		gap: 16px;
+	}
+
+	.victory-rank {
+		text-align: center;
+		font-size: 22px;
+		color: #ffd700;
+		margin: 16px 0;
+		padding: 12px;
+		background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.1));
+		border-radius: 12px;
+		border: 2px solid rgba(255, 215, 0, 0.3);
+	}
+
+	/* 排行榜模态框 */
+	.leaderboard-modal {
+		max-width: 450px;
+		padding: 24px;
+	}
+
+	.leaderboard-tabs {
+		display: flex;
+		gap: 8px;
+		margin-bottom: 16px;
+	}
+
+	.leaderboard-tab {
+		flex: 1;
+		padding: 10px 12px;
+		border: 2px solid #e0e0e0;
+		border-radius: 8px;
+		background: #f8f8f8;
+		color: #666;
+		font-size: 14px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.leaderboard-tab:hover {
+		border-color: #4CAF50;
+		background: #f0f8f0;
+	}
+
+	.leaderboard-tab.active {
+		border-color: #4CAF50;
+		background: linear-gradient(135deg, #4CAF50, #45a049);
+		color: white;
+	}
+
+	.leaderboard-content {
+		min-height: 300px;
+	}
+
+	.leaderboard-empty {
+		text-align: center;
+		padding: 60px 20px;
+		color: #999;
+		font-size: 16px;
+	}
+
+	.leaderboard-list {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.leaderboard-entry {
+		display: grid;
+		grid-template-columns: 50px 1fr 80px 90px;
+		align-items: center;
+		padding: 12px 16px;
+		background: #f8f8f8;
+		border-radius: 8px;
+		font-size: 15px;
+		transition: all 0.2s ease;
+	}
+
+	.leaderboard-entry:hover {
+		background: #f0f0f0;
+	}
+
+	.leaderboard-entry.highlight {
+		background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1));
+		border: 2px solid rgba(255, 215, 0, 0.5);
+	}
+
+	.entry-rank {
+		font-weight: 700;
+		font-size: 16px;
+		color: #666;
+	}
+
+	.entry-score {
+		font-weight: 700;
+		color: #4CAF50;
+	}
+
+	.entry-moves {
+		color: #888;
+		font-size: 14px;
+	}
+
+	.entry-date {
+		color: #aaa;
+		font-size: 13px;
+		text-align: right;
+	}
+
+	.leaderboard-stats {
+		margin-top: 16px;
+		padding: 16px;
+		background: #f5f5f5;
+		border-radius: 8px;
+	}
+
+	.stats-row {
+		display: flex;
+		justify-content: space-between;
+		font-size: 14px;
+		color: #666;
 	}
 
 	/* 拖拽视觉元素 - 动态创建的元素需要 :global */

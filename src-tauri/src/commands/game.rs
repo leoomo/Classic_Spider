@@ -1,5 +1,6 @@
 use crate::game::history::History;
 use crate::game::state::GameState;
+use crate::game::stats::GameStats;
 use crate::storage;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
@@ -238,4 +239,37 @@ pub fn can_redo(manager: State<GameManager>) -> bool {
 #[tauri::command]
 pub fn debug_history(manager: State<GameManager>) -> (usize, usize) {
     manager.history.lock().unwrap().debug_info()
+}
+
+// ============== 排行榜功能 ==============
+
+/// 获取游戏统计
+#[tauri::command]
+pub fn get_stats(app_handle: AppHandle) -> Result<GameStats, String> {
+    storage::load_stats(&app_handle)
+}
+
+/// 记录游戏结果
+/// 返回 (更新后统计, 排名或None)
+#[tauri::command]
+pub fn record_game_result(
+    difficulty: u8,
+    score: i32,
+    moves: u32,
+    won: bool,
+    app_handle: AppHandle,
+) -> Result<(GameStats, Option<usize>), String> {
+    // 获取当前日期
+    let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+
+    // 加载现有统计
+    let mut stats = storage::load_stats(&app_handle)?;
+
+    // 记录游戏结果
+    let rank = stats.record_game(difficulty, score, moves, won, &today);
+
+    // 保存更新后的统计
+    storage::save_stats(&stats, &app_handle)?;
+
+    Ok((stats, rank))
 }

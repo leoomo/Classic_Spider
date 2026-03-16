@@ -17,3 +17,20 @@ export interface GameState {
 	game_over: boolean;
 	won: boolean;
 }
+
+export interface ScoreEntry {
+	rank: number;
+	score: number;
+	moves: number;
+	date: string;
+}
+
+export interface Leaderboard {
+	entries: ScoreEntry[];
+}
+
+export interface GameStats {
+	leaderboards: [Leaderboard, Leaderboard, Leaderboard];
+	games_played: [number, number, number];
+	games_won: [number, number, number];
+}
