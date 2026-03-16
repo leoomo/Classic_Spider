@@ -881,19 +881,23 @@
 		return ((won / played) * 100).toFixed(1);
 	}
 
-	onMount(async () => {
+	onMount(() => {
 		soundManager.preload();
-		try {
-			const hasSave = await invoke<boolean>('has_saved_game');
-			if (hasSave) {
-				showRestorePrompt = true;
-			} else {
+
+		// 异步初始化
+		(async () => {
+			try {
+				const hasSave = await invoke<boolean>('has_saved_game');
+				if (hasSave) {
+					showRestorePrompt = true;
+				} else {
+					initGame(1);
+				}
+			} catch (e) {
+				console.error('Failed to check saved game:', e);
 				initGame(1);
 			}
-		} catch (e) {
-			console.error('Failed to check saved game:', e);
-			initGame(1);
-		}
+		})();
 
 		// 键盘快捷键
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -961,7 +965,7 @@
 	}
 </script>
 
-<div class="game-container" oncontextmenu={(e) => e.preventDefault()}>
+<div class="game-container" role="application" oncontextmenu={(e) => e.preventDefault()}>
 	<!-- 调试面板 -->
 	{#if debugMode}
 		<div class="debug-panel">

@@ -1,4 +1,4 @@
-import type { GameState } from '$lib/types/game';
+import type { GameState, Suit } from '$lib/types/game';
 
 // Mock Tauri invoke for browser testing
 export async function invokeMock<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
@@ -34,7 +34,7 @@ function createMockGameState(difficulty: number): GameState {
 	const suits = difficulty === 1 ? ['spade'] as const : difficulty === 2 ? ['spade', 'heart'] as const : ['spade', 'heart', 'diamond', 'club'] as const;
 
 	// Create 104 cards (2 decks)
-	const allCards: Array<{ id: number; suit: string; value: number; face_up: boolean }> = [];
+	const allCards: Array<{ id: number; suit: Suit; value: number; face_up: boolean }> = [];
 	let cardId = 0;
 	for (const suit of suits) {
 		for (let value = 1; value <= 13; value++) {
@@ -53,10 +53,10 @@ function createMockGameState(difficulty: number): GameState {
 	}
 
 	// Deal to 10 columns (54 cards)
-	const columns: Array<Array<{ id: number; suit: string; value: number; face_up: boolean }>> = [];
+	const columns: Array<Array<{ id: number; suit: Suit; value: number; face_up: boolean }>> = [];
 	for (let i = 0; i < 10; i++) {
 		const count = i < 4 ? 6 : 5;
-		const column: Array<{ id: number; suit: string; value: number; face_up: boolean }> = [];
+		const column: Array<{ id: number; suit: Suit; value: number; face_up: boolean }> = [];
 		for (let j = 0; j < count; j++) {
 			const card = allCards.pop()!;
 			column.push({
