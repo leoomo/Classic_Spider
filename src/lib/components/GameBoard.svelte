@@ -377,6 +377,16 @@
 		}
 	}
 
+	// 点击空白处取消选中
+	function handleBackgroundClick(event: MouseEvent) {
+		const target = event.target as HTMLElement;
+		// 检查点击的是否是卡牌或与卡牌相关的元素
+		const isCardClick = target.closest('.card-wrapper') || target.closest('.foundation') || target.closest('.stock') || target.closest('.toolbar') || target.closest('button');
+		if (!isCardClick && selectedCard) {
+			selectedCard = null;
+		}
+	}
+
 	// 执行移动操作
 	async function executeMove(fromCol: number, startIdx: number, toCol: number) {
 		if (!gameState) return;
@@ -965,7 +975,7 @@
 	}
 </script>
 
-<div class="game-container" role="application" oncontextmenu={(e) => e.preventDefault()}>
+<div class="game-container" role="application" oncontextmenu={(e) => e.preventDefault()} onclick={handleBackgroundClick}>
 	<!-- 调试面板 -->
 	{#if debugMode}
 		<div class="debug-panel">
