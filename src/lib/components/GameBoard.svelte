@@ -365,8 +365,11 @@
 				shakeColumn = colIndex;
 				setTimeout(() => { shakeColumn = null; }, 500);
 			}
+		} else if (selectedCard.colIndex === colIndex && selectedCard.cardIndex === cardIndex) {
+			// 点击同一张牌 → 取消选中
+			selectedCard = null;
 		} else if (selectedCard.colIndex === colIndex) {
-			// 点击同一列 → 尝试选中新的卡牌
+			// 点击同一列不同牌 → 尝试选中新的卡牌
 			const cardsFromIndex = column.slice(cardIndex);
 			let isValidSequence = true;
 			for (let i = 0; i < cardsFromIndex.length - 1; i++) {
