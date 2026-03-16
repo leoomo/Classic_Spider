@@ -1127,6 +1127,7 @@
 					{#if dealError}
 						<div class="deal-error-toast">{dealError}</div>
 					{/if}
+					<span class="stock-label">剩余发牌: {remainingDeals} 次</span>
 					<button
 						class="stock-pile"
 						disabled={gameState.stock.length === 0}
@@ -1140,7 +1141,6 @@
 							{/each}
 						{/if}
 					</button>
-					<span class="stock-label">剩余发牌: {remainingDeals} 次</span>
 				</div>
 			</div>
 		{/if}
