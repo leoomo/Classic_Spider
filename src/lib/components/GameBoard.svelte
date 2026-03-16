@@ -343,13 +343,10 @@
 		const column = gameState.columns[colIndex];
 		const card = column[cardIndex];
 
-
-
-
-
 		if (!card.face_up) return;
 
 		if (selectedCard === null) {
+			// 第一次点击 - 选中卡牌
 			const cardsFromIndex = column.slice(cardIndex);
 			let isValidSequence = true;
 			for (let i = 0; i < cardsFromIndex.length - 1; i++) {
@@ -368,10 +365,11 @@
 				shakeColumn = colIndex;
 				setTimeout(() => { shakeColumn = null; }, 500);
 			}
-		} else if (selectedCard.colIndex === colIndex && selectedCard.cardIndex === cardIndex) {
+		} else if (selectedCard.colIndex === colIndex) {
+			// 点击同一列 → 取消选中
 			selectedCard = null;
 		} else {
-
+			// 点击另一列 → 尝试移动
 			await executeMove(selectedCard.colIndex, selectedCard.cardIndex, colIndex);
 			selectedCard = null;
 		}
@@ -456,8 +454,6 @@
 			startX: event.clientX,
 			startY: event.clientY
 		};
-
-		selectedCard = null;
 
 		// 添加全局鼠标事件
 		document.addEventListener('mousemove', handleDragMove);
