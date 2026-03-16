@@ -2,7 +2,7 @@
 	import { onMount, flushSync } from 'svelte';
 	import Column from './Column.svelte';
 	import { soundManager } from '$lib/utils/sound';
-	import { DRAG_THRESHOLD, DRAG_SCALE } from '$lib/utils/dragDrop';
+	import { DRAG_THRESHOLD, DRAG_SCALE, isValidDragSequence } from '$lib/utils/dragDrop';
 	import type { GameState, Card, Suit, GameStats } from '$lib/types/game';
 
 	let gameState = $state<GameState | null>(null);
@@ -348,16 +348,7 @@
 		if (selectedCard === null) {
 			// 第一次点击 - 选中卡牌
 			const cardsFromIndex = column.slice(cardIndex);
-			let isValidSequence = true;
-			for (let i = 0; i < cardsFromIndex.length - 1; i++) {
-				if (cardsFromIndex[i].suit !== cardsFromIndex[i + 1].suit ||
-					cardsFromIndex[i].value !== cardsFromIndex[i + 1].value + 1) {
-					isValidSequence = false;
-					break;
-				}
-			}
-
-			if (isValidSequence) {
+			if (isValidDragSequence(cardsFromIndex)) {
 				selectedCard = { colIndex, cardIndex };
 				soundManager.play('click');
 			} else {
@@ -371,16 +362,7 @@
 		} else if (selectedCard.colIndex === colIndex) {
 			// 点击同一列不同牌 → 尝试选中新的卡牌
 			const cardsFromIndex = column.slice(cardIndex);
-			let isValidSequence = true;
-			for (let i = 0; i < cardsFromIndex.length - 1; i++) {
-				if (cardsFromIndex[i].suit !== cardsFromIndex[i + 1].suit ||
-					cardsFromIndex[i].value !== cardsFromIndex[i + 1].value + 1) {
-					isValidSequence = false;
-					break;
-				}
-			}
-
-			if (isValidSequence) {
+			if (isValidDragSequence(cardsFromIndex)) {
 				selectedCard = { colIndex, cardIndex };
 				soundManager.play('click');
 			} else {
