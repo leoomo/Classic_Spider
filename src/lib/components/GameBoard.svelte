@@ -1249,7 +1249,7 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 6px 16px;
+		padding: 4px 16px;
 		background: rgba(0, 0, 0, 0.35);
 		backdrop-filter: blur(12px);
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -1271,7 +1271,7 @@
 	}
 
 	.label {
-		font-size: 14px;
+		font-size: 12px;
 		color: rgba(255, 255, 255, 0.8);
 		text-transform: uppercase;
 		letter-spacing: 1px;
@@ -1279,7 +1279,7 @@
 	}
 
 	.value {
-		font-size: 24px;
+		font-size: 20px;
 		font-weight: 700;
 		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 	}
@@ -1294,24 +1294,24 @@
 		align-items: center;
 		justify-content: center;
 		gap: 6px;
-		padding: 10px 20px;
+		padding: 6px 14px;
 		border: 2px solid transparent;
-		border-radius: 10px;
+		border-radius: 8px;
 		background: rgba(255, 255, 255, 0.2);
 		color: white;
-		font-size: 16px;
+		font-size: 15px;
 		font-weight: 700;
 		cursor: pointer;
 		transition: all 0.2s ease-out;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+		box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
 		min-width: auto;
 		min-height: auto;
 	}
 
 	.btn:hover:not(:disabled) {
 		background: rgba(255, 255, 255, 0.32);
-		transform: translateY(-3px);
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+		transform: translateY(-2px);
+		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
 		border-color: rgba(255, 255, 255, 0.4);
 	}
 
@@ -2391,17 +2391,14 @@
 	@media (max-width: 768px) {
 		.toolbar {
 			flex-direction: row;
-			flex-wrap: wrap;
-			justify-content: center;
+			flex-wrap: nowrap;
+			justify-content: space-between;
 			gap: 6px;
-			padding: 6px 8px;
+			padding: 4px 8px;
 		}
 
 		.game-info {
-			gap: 12px;
-			order: -1;
-			width: 100%;
-			justify-content: center;
+			gap: 10px;
 		}
 
 		.label {
@@ -2414,14 +2411,12 @@
 
 		.actions {
 			gap: 4px;
-			width: 100%;
-			justify-content: center;
 		}
 
 		.btn {
-			padding: 5px 8px;
+			padding: 4px 6px;
 			font-size: 11px;
-			gap: 3px;
+			gap: 2px;
 			border-radius: 5px;
 		}
 
