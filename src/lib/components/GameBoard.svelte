@@ -1108,7 +1108,7 @@
 				新游戏
 			</button>
 			<!-- 测试按钮 -->
-			<button class="btn" onclick={() => { showVictoryModal = true; showConfetti = true; }}>🎉</button>
+			<button class="btn" onclick={() => { showVictoryModal = true; showConfetti = true; hasShownVictory = true; recordGameResult(); }}>🎉</button>
 			<!-- 调试按钮已禁用
 			<button class="btn debug-btn" onclick={() => debugMode = !debugMode} title="切换调试模式">
 				🔧
