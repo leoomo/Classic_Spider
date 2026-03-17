@@ -870,7 +870,15 @@
 	}
 
 	async function recordGameResult() {
-		if (!gameState) return;
+		if (!gameState) {
+			console.error('[Leaderboard] recordGameResult: gameState is null');
+			return;
+		}
+		console.log('[Leaderboard] Recording game result:', {
+			difficulty: gameState.difficulty,
+			score: gameState.score,
+			moves: gameState.moves
+		});
 		try {
 			const [stats, rank] = await invoke<[GameStats, number | null]>('record_game_result', {
 				difficulty: gameState.difficulty,
@@ -878,14 +886,16 @@
 				moves: gameState.moves,
 				won: true
 			});
+			console.log('[Leaderboard] Game recorded, rank:', rank);
 			currentStats = stats;
 			lastGameRank = rank;
 		} catch (e) {
-			console.error('Failed to record game result:', e);
+			console.error('[Leaderboard] Failed to record game result:', e);
 		}
 	}
 
 	function openLeaderboard() {
+		showVictoryModal = false; // 关闭胜利弹窗
 		selectedLeaderboardTab = (gameState?.difficulty ?? 1) - 1;
 		showLeaderboard = true;
 		fetchStats();
