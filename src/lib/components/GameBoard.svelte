@@ -963,6 +963,7 @@
 	});
 
 	// Victory detection
+
 	$effect(() => {
 		if (gameState?.completed === 8 && !showVictoryModal && !hasShownVictory && !isLoading) {
 			hasShownVictory = true;
@@ -1223,13 +1224,15 @@
 
 		<!-- 胜利庆祝模态框 -->
 		{#if showVictoryModal}
-			<div class="victory-overlay">
+			<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+			<div class="victory-overlay" onclick={closeVictoryModal} role="button" tabindex="-1" onkeydown={(e) => e.key === 'Escape' && closeVictoryModal()}>
 				<div class="confetti-container" class:stopped={!showConfetti}>
 					{#each Array(20) as _, i}
 						<div class="confetti" style="--delay: {Math.random() * 3}s; --x: {Math.random() * 100}vw; --rotate: {Math.random() * 720 - 360}deg;"></div>
 					{/each}
 				</div>
-				<div class="victory-modal">
+				<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+				<div class="victory-modal" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="victory-title" tabindex="-1">
 					<h2 class="victory-title">🎉 恭喜通关！</h2>
 					<div class="victory-stats">
 						<div class="stat">
