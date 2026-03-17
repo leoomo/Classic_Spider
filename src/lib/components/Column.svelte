@@ -69,7 +69,7 @@
 	style={!isDropTarget ? 'background: transparent; box-shadow: none;' : ''}
 	role="list"
 	aria-label="第 {columnIndex + 1} 列"
-	onclick={() => onColumnClick?.(columnIndex)}
+	onclick={() => cards.length === 0 && onColumnClick?.(columnIndex)}
 >
 	{#each cards as card, idx (card.id)}
 		<div
@@ -77,7 +77,7 @@
 			class:hint-card={hintStartIndex !== null && idx === hintStartIndex}
 			style="top: {getCardOffset(idx)}px;"
 			onmousedown={(e) => handleMouseDown(idx, e)}
-			onclick={() => onCardClick?.(idx)}
+			onclick={(e) => { e.stopPropagation(); onCardClick?.(idx); }}
 			onkeydown={(e) => handleKeyDown(idx, e)}
 			role="button"
 			tabindex={card.face_up ? 0 : -1}
