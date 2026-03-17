@@ -133,6 +133,7 @@
 		margin: 4px;
 		background: rgba(0, 0, 0, 0.12);
 		transition: all 0.2s ease;
+		cursor: pointer;
 	}
 
 	.empty-slot:hover {
@@ -170,6 +171,7 @@
 			inset 0 0 0 6px rgba(76, 175, 80, 1),
 			0 0 30px rgba(76, 175, 80, 0.5);
 		animation: valid-pulse 0.8s ease-in-out infinite;
+		cursor: pointer;
 	}
 
 	@keyframes valid-pulse {
