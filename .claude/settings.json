@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "分析以下代码变更的影响范围：$ARGUMENTS。评估哪些模块、函数可能受影响。简洁回答，只列出受影响范围。"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '📋 项目规范提醒: 使用 pnpm (不是 npm/bun)。调试日志: logs/debug.log。启动前检查端口 1420/5173。'"
+          }
+        ]
+      }
+    ]
+  }
+}
