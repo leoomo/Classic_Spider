@@ -9,13 +9,14 @@
 		hintStartIndex?: number | null;
 		isHintTarget?: boolean;
 		onCardClick: (cardIndex: number) => void;
+		onColumnClick?: (colIndex: number) => void;
 		onDragPending?: (colIndex: number, cardIndex: number, event: MouseEvent) => void;
 		shake?: boolean;
 		isDropTarget?: boolean;
 		dropValid?: boolean;
 	}
 
-	let { cards = [], columnIndex, selectedIndex, hintStartIndex = null, isHintTarget = false, onCardClick, onDragPending, shake = false, isDropTarget = false, dropValid = true }: Props = $props();
+	let { cards = [], columnIndex, selectedIndex, hintStartIndex = null, isHintTarget = false, onCardClick, onColumnClick, onDragPending, shake = false, isDropTarget = false, dropValid = true }: Props = $props();
 
 	// 计算每张牌的偏移位置（面朝上的卡牌间距更大）
 	function getCardOffset(index: number): number {
@@ -68,6 +69,7 @@
 	style={!isDropTarget ? 'background: transparent; box-shadow: none;' : ''}
 	role="list"
 	aria-label="第 {columnIndex + 1} 列"
+	onclick={() => onColumnClick?.(columnIndex)}
 >
 	{#each cards as card, idx (card.id)}
 		<div

@@ -341,21 +341,28 @@
 		if (!gameState || isLoading || dragState?.isDragging) return;
 
 		const column = gameState.columns[colIndex];
-		const card = column[cardIndex];
 
+		// 空列情况：尝试移动到空列
+		if (column.length === 0) {
+			if (selectedCard !== null) {
+				// 点击空列 → 尝试移动
+				await executeMove(selectedCard.colIndex, selectedCard.cardIndex, colIndex);
+				selectedCard = null;
+			}
+			return;
+		}
+
+		const card = column[cardIndex];
 		if (!card.face_up) return;
 
 		if (selectedCard === null) {
-			// 第一次点击 - 选中卡牌
+			// 第一次点击 - 选中卡牌（只有有效序列才能选中）
 			const cardsFromIndex = column.slice(cardIndex);
 			if (isValidDragSequence(cardsFromIndex)) {
 				selectedCard = { colIndex, cardIndex };
 				soundManager.play('click');
-			} else {
-				soundManager.play('error');
-				shakeColumn = colIndex;
-				setTimeout(() => { shakeColumn = null; }, 500);
 			}
+			// 无效序列时不抖动，只是不选中
 		} else if (selectedCard.colIndex === colIndex && selectedCard.cardIndex === cardIndex) {
 			// 点击同一张牌 → 取消选中
 			selectedCard = null;
@@ -1267,6 +1274,7 @@
                         hintStartIndex={hintCards?.fromCol === index ? hintCards.startIdx : null}
                         isHintTarget={hintCards?.toCol === index}
                         onCardClick={(cardIndex) => handleCardClick(index, cardIndex)}
+                        onColumnClick={(colIndex) => handleCardClick(colIndex, 0)}
                         onDragPending={(colIdx, cardIdx, evt) => handleDragPending(colIdx, cardIdx, evt)}
                         shake={shakeColumn === index}
                         isDropTarget={dropTargetCol === index}
