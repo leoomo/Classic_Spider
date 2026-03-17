@@ -361,8 +361,11 @@
 			if (isValidDragSequence(cardsFromIndex)) {
 				selectedCard = { colIndex, cardIndex };
 				soundManager.play('click');
+			} else {
+				soundManager.play('error');
+				shakeColumn = colIndex;
+				setTimeout(() => { shakeColumn = null; }, 500);
 			}
-			// 无效序列时不抖动，只是不选中
 		} else if (selectedCard.colIndex === colIndex && selectedCard.cardIndex === cardIndex) {
 			// 点击同一张牌 → 取消选中
 			selectedCard = null;
