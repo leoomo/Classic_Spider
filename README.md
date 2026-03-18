@@ -33,7 +33,7 @@
 
 ## 📥 下载安装
 
-[![Download](https://img.shields.io/badge/Download-v0.3.1-green?logo=github)](https://github.com/leoomo/Classic_Spider/releases/latest)
+[![Download](https://img.shields.io/badge/Download-v0.3.4-green?logo=github)](https://github.com/leoomo/Classic_Spider/releases/latest)
 
 > [点击下载最新版](https://github.com/leoomo/Classic_Spider/releases/latest) · 支持 Windows / macOS
 
