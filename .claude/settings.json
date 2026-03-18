@@ -21,6 +21,17 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "检测到可能执行 git push 命令。$ARGUMENTS\n\n如果命令包含 'git push'，请先执行 'bash .claude/scripts/update-version.sh' 更新版本号，然后再执行原命令。如果不是 push 命令，直接回答 'NOOP'。"
+          }
+        ]
+      }
     ]
   }
 }
