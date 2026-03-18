@@ -1312,6 +1312,10 @@
 			</div>
 			<!-- 主游戏区域容器 -->
 			<div class="main-game-area">
+				<!-- 发牌错误提示 - 居中显示 -->
+				{#if dealError}
+					<div class="deal-error-toast">{dealError}</div>
+				{/if}
 				<!-- 10列卡牌 -->
 				<div class="columns">
 					{#each gameState.columns as column, index}
@@ -1335,9 +1339,6 @@
 				<div class="bottom-area">
 					<!-- 发牌堆 - 右下角 -->
 					<div class="stock-area">
-						{#if dealError}
-							<div class="deal-error-toast">{dealError}</div>
-						{/if}
 						<span class="stock-label">剩余发牌: {remainingDeals} 次</span>
 						<button
 							class="stock-pile"
@@ -1740,6 +1741,7 @@
 		flex-direction: column;
 		min-height: 0;
 		min-width: 0;
+		position: relative;
 	}
 
 	.columns {
@@ -1772,29 +1774,35 @@
 		position: relative;
 	}
 
+	/* 发牌错误提示 - 游戏区居中 */
 	.deal-error-toast {
 		position: absolute;
 		top: 50%;
 		left: 50%;
 		transform: translate(-50%, -50%);
-		background: rgba(244, 67, 54, 0.95);
+		background: linear-gradient(135deg, rgba(244, 67, 54, 0.95) 0%, rgba(211, 47, 47, 0.95) 100%);
 		color: white;
-		padding: 10px 20px;
-		border-radius: 8px;
-		font-size: 14px;
+		padding: 16px 32px;
+		border-radius: 12px;
+		font-size: 18px;
 		font-weight: 600;
 		white-space: nowrap;
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-		animation: toast-in 0.3s ease-out;
+		box-shadow:
+			0 8px 32px rgba(244, 67, 54, 0.4),
+			0 2px 8px rgba(0, 0, 0, 0.2);
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		animation: toast-slide-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 		z-index: 100;
+		backdrop-filter: blur(8px);
+		letter-spacing: 0.5px;
 	}
 
-	@keyframes toast-in {
-		from {
+	@keyframes toast-slide-in {
+		0% {
 			opacity: 0;
-			transform: translate(-50%, -50%) scale(0.9);
+			transform: translate(-50%, -30%) scale(0.9);
 		}
-		to {
+		100% {
 			opacity: 1;
 			transform: translate(-50%, -50%) scale(1);
 		}
