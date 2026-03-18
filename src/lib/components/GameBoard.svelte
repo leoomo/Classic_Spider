@@ -1501,24 +1501,30 @@
 		gap: 8px;
 	}
 
-	/* 左侧 K 堆区域 */
+	/* 左侧 K 堆区域 - Liquid Glass */
 	.side-foundation-area {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		padding: 8px;
-		background: rgba(0, 0, 0, 0.2);
-		border-radius: 12px;
+		padding: 12px 8px;
+		background: rgba(0, 0, 0, 0.25);
+		border-radius: 16px;
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.05),
+			0 4px 24px rgba(0, 0, 0, 0.15);
 		flex-shrink: 0;
-		min-width: 70px;
+		min-width: 74px;
+		backdrop-filter: blur(8px);
 	}
 
 	.side-foundation-label {
 		font-size: 13px;
 		font-weight: 600;
-		color: rgba(255, 255, 255, 0.85);
-		margin-bottom: 8px;
+		color: rgba(255, 255, 255, 0.9);
+		margin-bottom: 10px;
 		text-align: center;
+		letter-spacing: 0.5px;
 	}
 
 	.side-foundation-piles {
@@ -1530,28 +1536,34 @@
 	.side-foundation {
 		width: 50px;
 		height: 70px;
-		border-radius: 6px;
+		border-radius: 8px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+		transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 		position: relative;
 		overflow: hidden;
 	}
 
-	/* 空位样式 */
+	/* 空位样式 - 微妙脉动 */
 	.side-foundation:not(.filled) {
-		background: linear-gradient(180deg, #1a3a1a 0%, #0d1f0d 100%);
-		border: 2px solid rgba(255, 255, 255, 0.2);
-		box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+		background: linear-gradient(180deg, rgba(26, 58, 26, 0.8) 0%, rgba(13, 31, 13, 0.8) 100%);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
 	}
 
 	.side-foundation:not(.filled)::after {
 		content: 'K';
 		font-size: 18px;
 		font-weight: 700;
-		color: rgba(255, 255, 255, 0.4);
+		color: rgba(255, 255, 255, 0.35);
+		animation: subtle-pulse 3s ease-in-out infinite;
+	}
+
+	@keyframes subtle-pulse {
+		0%, 100% { opacity: 0.35; }
+		50% { opacity: 0.5; }
 	}
 
 	.side-foundation-placeholder {
@@ -1677,8 +1689,8 @@
 	}
 
 	.btn:active:not(:disabled) {
-		transform: translateY(0);
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+		transform: translateY(1px);
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 	}
 
 	.btn.primary {
@@ -1802,6 +1814,10 @@
 
 	.stock-pile:hover:not(:disabled) {
 		transform: scale(1.08);
+	}
+
+	.stock-pile:active:not(:disabled) {
+		transform: scale(1.02);
 	}
 
 	.stock-pile:hover:not(:disabled) .stock-card {
