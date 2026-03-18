@@ -1427,11 +1427,7 @@
 		font-size: 11px;
 		padding: 2px 0;
 	}
-	.debug-btn {
-		background: #333 !important;
-		padding: 8px 12px !important;
-		min-width: auto !important;
-	}
+
 	.debug-action {
 		width: 100%;
 		margin: 8px 0;
@@ -2400,18 +2396,9 @@
 
 	/* 响应式优化 - 适配不同屏幕尺寸 */
 	@media (max-width: 1440px) {
-		.foundation-area {
-			gap: 4px;
-		}
-
-		.foundation {
-			width: 52px;
-			height: 72px;
-		}
-
-		.foundation:not(.filled)::after {
-			font-size: 12px;
-			letter-spacing: 1px;
+		.side-foundation {
+			width: 46px;
+			height: 64px;
 		}
 
 		.stock-pile {
@@ -2458,18 +2445,9 @@
 			padding: 10px;
 		}
 
-		.foundation-area {
-			gap: 4px;
-		}
-
-		.foundation {
-			width: 50px;
-			height: 70px;
-		}
-
-		.foundation:not(.filled)::after {
-			font-size: 12px;
-			letter-spacing: 1px;
+		.side-foundation {
+			width: 46px;
+			height: 64px;
 		}
 
 		.stock-pile {
@@ -2528,18 +2506,9 @@
 			gap: 2px;
 		}
 
-		.foundation-area {
-			gap: 3px;
-		}
-
-		.foundation {
-			width: 50px;
-			height: 70px;
-		}
-
-		.foundation:not(.filled)::after {
-			font-size: 11px;
-			letter-spacing: 1px;
+		.side-foundation {
+			width: 44px;
+			height: 62px;
 		}
 
 		.stock-pile {
@@ -2615,14 +2584,9 @@
 			padding: 0 4px;
 		}
 
-		.foundation {
-			width: 50px;
-			height: 70px;
-		}
-
-		.foundation:not(.filled)::after {
-			font-size: 11px;
-			letter-spacing: 1px;
+		.side-foundation {
+			width: 44px;
+			height: 62px;
 		}
 
 		.stock-pile {
@@ -2694,18 +2658,9 @@
 			gap: 4px;
 		}
 
-		.foundation-area {
-			gap: 2px;
-		}
-
-		.foundation {
-			width: 44px;
-			height: 60px;
-		}
-
-		.foundation:not(.filled)::after {
-			font-size: 9px;
-			letter-spacing: 1px;
+		.side-foundation {
+			width: 40px;
+			height: 56px;
 		}
 
 		.stock-pile {
@@ -2829,18 +2784,14 @@
 			order: 0;
 		}
 
-		.foundation-area {
-			gap: 2px;
+		.side-foundation-area {
+			padding: 6px 4px;
+			min-width: 60px;
 		}
 
-		.foundation {
+		.side-foundation {
 			width: 36px;
 			height: 50px;
-		}
-
-		.foundation:not(.filled)::after {
-			font-size: 7px;
-			letter-spacing: 0;
 		}
 
 		.stock-pile {
@@ -2880,14 +2831,6 @@
 		}
 
 		.btn {
-			transition: none;
-		}
-
-		.column {
-			transition: none;
-		}
-
-		.card {
 			transition: none;
 		}
 	}
