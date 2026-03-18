@@ -1287,67 +1287,72 @@
 				<button class="btn" onclick={() => initGame(1)}>重试</button>
 			</div>
 		{:else if gameState}
-			<!-- 10列卡牌 -->
-            <div class="columns">
-                {#each gameState.columns as column, index}
-                    <Column
-                        cards={column}
-                        columnIndex={index}
-                        selectedIndex={selectedCard?.colIndex === index ? selectedCard.cardIndex : null}
-                        hintStartIndex={hintCards?.fromCol === index ? hintCards.startIdx : null}
-                        isHintTarget={hintCards?.toCol === index}
-                        onCardClick={(cardIndex) => handleCardClick(index, cardIndex)}
-                        onColumnClick={(colIndex) => handleCardClick(colIndex, 0)}
-                        onDragPending={(colIdx, cardIdx, evt) => handleDragPending(colIdx, cardIdx, evt)}
-                        shake={shakeColumn === index}
-                        isDropTarget={dropTargetCol === index}
-                        dropValid={dropValid}
-                    />
-                {/each}
-            </div>
-
-			<!-- 底部区域 - 回收堆在左，发牌堆在右 -->
-			<div class="bottom-area">
-				<!-- 回收堆 - 左下角 -->
-				<div class="foundation-area">
+			<!-- 左侧 K 堆区域 -->
+			<div class="side-foundation-area">
+				<div class="side-foundation-label">完成区</div>
+				<div class="side-foundation-piles">
 					{#each Array(8) as _, i}
-						<div class="foundation" class:filled={i < gameState.completed}>
+						<div class="side-foundation" class:filled={i < gameState.completed}>
 							{#if i < gameState.completed}
-								<div class="completed-stack">
-									<div class="stack-card stack-3"></div>
-									<div class="stack-card stack-2"></div>
-									<div class="stack-card stack-1"></div>
-									<div class="stack-card stack-top">
-										<span class="card-value">K</span>
-										<span class="card-suit">♠</span>
+								<div class="side-completed-stack">
+									<div class="side-stack-card side-stack-3"></div>
+									<div class="side-stack-card side-stack-2"></div>
+									<div class="side-stack-card side-stack-1"></div>
+									<div class="side-stack-card side-stack-top">
+										<span class="side-card-value">K</span>
+										<span class="side-card-suit">♠</span>
 									</div>
 								</div>
 							{:else}
-								<div class="foundation-placeholder"></div>
+								<div class="side-foundation-placeholder"></div>
 							{/if}
 						</div>
 					{/each}
 				</div>
+			</div>
+			<!-- 主游戏区域容器 -->
+			<div class="main-game-area">
+				<!-- 10列卡牌 -->
+				<div class="columns">
+					{#each gameState.columns as column, index}
+						<Column
+							cards={column}
+							columnIndex={index}
+							selectedIndex={selectedCard?.colIndex === index ? selectedCard.cardIndex : null}
+							hintStartIndex={hintCards?.fromCol === index ? hintCards.startIdx : null}
+							isHintTarget={hintCards?.toCol === index}
+							onCardClick={(cardIndex) => handleCardClick(index, cardIndex)}
+							onColumnClick={(colIndex) => handleCardClick(colIndex, 0)}
+							onDragPending={(colIdx, cardIdx, evt) => handleDragPending(colIdx, cardIdx, evt)}
+							shake={shakeColumn === index}
+							isDropTarget={dropTargetCol === index}
+							dropValid={dropValid}
+						/>
+					{/each}
+				</div>
 
-				<!-- 发牌堆 - 右下角 -->
-				<div class="stock-area">
-					{#if dealError}
-						<div class="deal-error-toast">{dealError}</div>
-					{/if}
-					<span class="stock-label">剩余发牌: {remainingDeals} 次</span>
-					<button
-						class="stock-pile"
-						disabled={gameState.stock.length === 0}
-						onclick={handleDeal}
-						aria-label="发牌，剩余 {remainingDeals} 次"
-						type="button"
-					>
-						{#if remainingDeals > 0}
-							{#each Array(Math.min(remainingDeals, 5)) as _, i}
-								<div class="stock-card" style="left: {i * 3}px; top: {i * 2}px; z-index: {i};"></div>
-							{/each}
+				<!-- 底部区域 - 发牌堆 -->
+				<div class="bottom-area">
+					<!-- 发牌堆 - 右下角 -->
+					<div class="stock-area">
+						{#if dealError}
+							<div class="deal-error-toast">{dealError}</div>
 						{/if}
-					</button>
+						<span class="stock-label">剩余发牌: {remainingDeals} 次</span>
+						<button
+							class="stock-pile"
+							disabled={gameState.stock.length === 0}
+							onclick={handleDeal}
+							aria-label="发牌，剩余 {remainingDeals} 次"
+							type="button"
+						>
+							{#if remainingDeals > 0}
+								{#each Array(Math.min(remainingDeals, 5)) as _, i}
+									<div class="stock-card" style="left: {i * 3}px; top: {i * 2}px; z-index: {i};"></div>
+								{/each}
+							{/if}
+						</button>
+					</div>
 				</div>
 			</div>
 		{/if}
@@ -1496,6 +1501,149 @@
 		gap: 8px;
 	}
 
+	/* 左侧 K 堆区域 */
+	.side-foundation-area {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 8px;
+		background: rgba(0, 0, 0, 0.2);
+		border-radius: 12px;
+		flex-shrink: 0;
+		min-width: 70px;
+	}
+
+	.side-foundation-label {
+		font-size: 13px;
+		font-weight: 600;
+		color: rgba(255, 255, 255, 0.85);
+		margin-bottom: 8px;
+		text-align: center;
+	}
+
+	.side-foundation-piles {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+
+	.side-foundation {
+		width: 50px;
+		height: 70px;
+		border-radius: 6px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+		position: relative;
+		overflow: hidden;
+	}
+
+	/* 空位样式 */
+	.side-foundation:not(.filled) {
+		background: linear-gradient(180deg, #1a3a1a 0%, #0d1f0d 100%);
+		border: 2px solid rgba(255, 255, 255, 0.2);
+		box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+	}
+
+	.side-foundation:not(.filled)::after {
+		content: 'K';
+		font-size: 18px;
+		font-weight: 700;
+		color: rgba(255, 255, 255, 0.4);
+	}
+
+	.side-foundation-placeholder {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1px;
+		opacity: 0.6;
+	}
+
+	/* 完成样式 */
+	.side-foundation.filled {
+		background: linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%);
+		border: none;
+		box-shadow:
+			0 1px 2px rgba(0, 0, 0, 0.2),
+			0 2px 4px rgba(0, 0, 0, 0.15);
+		animation: side-complete-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+
+	@keyframes side-complete-pop {
+		0% {
+			transform: scale(0.8);
+			opacity: 0;
+		}
+		50% {
+			transform: scale(1.1);
+		}
+		100% {
+			transform: scale(1);
+			opacity: 1;
+		}
+	}
+
+	/* 完成的牌堆 */
+	.side-completed-stack {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1;
+	}
+
+	.side-stack-card {
+		position: absolute;
+		width: 36px;
+		height: 50px;
+		background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
+		border-radius: 4px;
+		box-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
+	}
+
+	.side-stack-3 {
+		transform: translateY(3px);
+		opacity: 0.5;
+	}
+
+	.side-stack-2 {
+		transform: translateY(1.5px);
+		opacity: 0.7;
+	}
+
+	.side-stack-1 {
+		transform: translateY(0);
+		opacity: 0.9;
+	}
+
+	.side-stack-top {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		transform: translateY(-1.5px);
+		z-index: 2;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+	}
+
+	.side-card-value {
+		font-size: 16px;
+		font-weight: bold;
+		color: #1a1a2e;
+		line-height: 1;
+	}
+
+	.side-card-suit {
+		font-size: 14px;
+		color: #1a1a2e;
+		line-height: 1;
+	}
+
 	.btn {
 		display: flex;
 		align-items: center;
@@ -1567,10 +1715,19 @@
 	.game-board {
 		flex: 1;
 		display: flex;
-		flex-direction: column;
+		flex-direction: row;
 		padding: 12px 8px 8px;
 		overflow: hidden;
 		min-height: 0;
+		gap: 8px;
+	}
+
+	.main-game-area {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		min-width: 0;
 	}
 
 	.columns {
@@ -1584,151 +1741,12 @@
 
 	.bottom-area {
 		display: flex;
-		justify-content: flex-start;
+		justify-content: flex-end;
 		align-items: flex-end;
 		padding-top: 10px;
 		flex-shrink: 0;
 		padding-left: 8px;
 		padding-right: 8px;
-		gap: 16px;
-	}
-
-	.foundation-area {
-		display: flex;
-		justify-content: flex-start;
-		gap: 6px;
-		flex-wrap: wrap;
-	}
-
-	.foundation {
-		width: 60px;
-		height: 84px;
-		border-radius: 8px;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-		position: relative;
-		overflow: hidden;
-	}
-
-	/* 空位样式 - Win7 经典风格 */
-	.foundation:not(.filled) {
-		background: linear-gradient(180deg, #1a3a1a 0%, #0d1f0d 100%);
-		border: 3px solid rgba(255, 255, 255, 0.25);
-		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
-	}
-
-	.foundation:not(.filled)::after {
-		content: 'K  A';
-		font-size: 18px;
-		font-weight: 700;
-		color: rgba(255, 255, 255, 0.5);
-		letter-spacing: 3px;
-	}
-
-	.foundation-placeholder {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1px;
-		opacity: 0.6;
-	}
-
-	/* 完成样式 - 真实的牌堆效果 */
-	.foundation.filled {
-		background: linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%);
-		border: none;
-		box-shadow:
-			0 2px 4px rgba(0, 0, 0, 0.2),
-			0 4px 8px rgba(0, 0, 0, 0.15),
-			inset 0 1px 0 rgba(255, 255, 255, 0.8);
-		animation: complete-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-	}
-
-	@keyframes complete-pop {
-		0% {
-			transform: scale(0.8);
-			opacity: 0;
-		}
-		50% {
-			transform: scale(1.1);
-		}
-		100% {
-			transform: scale(1);
-			opacity: 1;
-		}
-	}
-
-	.foundation.filled::before {
-		content: '';
-		position: absolute;
-		top: 3px;
-		left: 3px;
-		right: 3px;
-		bottom: 3px;
-		background: linear-gradient(145deg, #f8f8f8 0%, #e8e8e8 100%);
-		border-radius: 4px;
-		box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-	}
-
-	/* 完成的牌堆 */
-	.completed-stack {
-		position: relative;
-		width: 100%;
-		height: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 1;
-	}
-
-	.stack-card {
-		position: absolute;
-		width: 38px;
-		height: 52px;
-		background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
-		border-radius: 4px;
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-	}
-
-	.stack-3 {
-		transform: translateY(4px);
-		opacity: 0.5;
-	}
-
-	.stack-2 {
-		transform: translateY(2px);
-		opacity: 0.7;
-	}
-
-	.stack-1 {
-		transform: translateY(0);
-		opacity: 0.9;
-	}
-
-	.stack-top {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		transform: translateY(-2px);
-		z-index: 2;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-	}
-
-	.card-value {
-		font-size: 18px;
-		font-weight: bold;
-		color: #1a1a2e;
-		line-height: 1;
-	}
-
-	.card-suit {
-		font-size: 16px;
-		color: #1a1a2e;
-		line-height: 1;
 	}
 
 	.stock-area {
