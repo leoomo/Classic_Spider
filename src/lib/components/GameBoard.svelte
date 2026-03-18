@@ -857,7 +857,9 @@
 
 	async function fetchStats() {
 		try {
+			console.log('[Leaderboard] fetchStats: calling get_stats...');
 			currentStats = await invoke<GameStats>('get_stats');
+			console.log('[Leaderboard] fetchStats: got stats:', JSON.stringify(currentStats));
 		} catch (e) {
 			console.error('Failed to fetch stats:', e);
 			// 使用默认值
@@ -880,23 +882,27 @@
 			moves: gameState.moves
 		});
 		try {
+			console.log('[Leaderboard] Calling record_game_result backend...');
 			const [stats, rank] = await invoke<[GameStats, number | null]>('record_game_result', {
 				difficulty: gameState.difficulty,
 				score: gameState.score,
 				moves: gameState.moves,
 				won: true
 			});
-			console.log('[Leaderboard] Game recorded, rank:', rank);
+			console.log('[Leaderboard] Backend returned, rank:', rank, ', stats:', JSON.stringify(stats));
 			currentStats = stats;
 			lastGameRank = rank;
+			console.log('[Leaderboard] currentStats updated:', JSON.stringify(currentStats));
 		} catch (e) {
 			console.error('[Leaderboard] Failed to record game result:', e);
 		}
 	}
 
 	function openLeaderboard() {
+		console.log('[Leaderboard] openLeaderboard called, currentStats before:', JSON.stringify(currentStats));
 		showVictoryModal = false; // 关闭胜利弹窗
 		selectedLeaderboardTab = (gameState?.difficulty ?? 1) - 1;
+		console.log('[Leaderboard] selectedLeaderboardTab:', selectedLeaderboardTab);
 		showLeaderboard = true;
 		fetchStats();
 	}
@@ -1107,8 +1113,6 @@
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
 				新游戏
 			</button>
-			<!-- 测试按钮 -->
-			<button class="btn" onclick={() => { showVictoryModal = true; showConfetti = true; hasShownVictory = true; recordGameResult(); }}>🎉</button>
 			<!-- 调试按钮已禁用
 			<button class="btn debug-btn" onclick={() => debugMode = !debugMode} title="切换调试模式">
 				🔧
@@ -1189,6 +1193,7 @@
 					<div class="leaderboard-content">
 						{#if currentStats}
 							{@const entries = currentStats.leaderboards[selectedLeaderboardTab].entries}
+							{@const debugInfo = console.log('[Leaderboard] Rendering tab', selectedLeaderboardTab, 'entries:', entries.length) || ''}
 							{#if entries.length === 0}
 								<div class="leaderboard-empty">
 									暂无记录，快去玩一局吧！

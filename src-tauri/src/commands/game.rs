@@ -4,6 +4,7 @@ use crate::game::stats::GameStats;
 use crate::storage;
 use std::sync::Mutex;
 use tauri::{AppHandle, State};
+use chrono;
 
 /// 游戏管理器
 pub struct GameManager {
@@ -246,6 +247,7 @@ pub fn debug_history(manager: State<GameManager>) -> (usize, usize) {
 /// 获取游戏统计
 #[tauri::command]
 pub fn get_stats(app_handle: AppHandle) -> Result<GameStats, String> {
+    println!("[RUST] get_stats called!");
     storage::load_stats(&app_handle)
 }
 
@@ -259,6 +261,15 @@ pub fn record_game_result(
     won: bool,
     app_handle: AppHandle,
 ) -> Result<(GameStats, Option<usize>), String> {
+    // 强制写入日志文件以确认函数被调用
+    let log_path = std::path::PathBuf::from("/Users/zen/projects/Classic_Spider/logs/rust_debug.log");
+    let log_msg = format!(
+        "[RUST] record_game_result CALLED! diff={}, score={}, moves={}, won={}\n",
+        difficulty, score, moves, won
+    );
+    std::fs::write(&log_path, &log_msg).ok();
+    eprintln!("{}", log_msg);
+
     // 获取当前日期
     let today = chrono::Local::now().format("%Y-%m-%d").to_string();
 

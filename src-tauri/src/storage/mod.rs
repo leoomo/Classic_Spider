@@ -11,11 +11,13 @@ const STATS_FILE: &str = "stats.json";
 
 /// 获取应用数据目录中的文件路径
 fn get_path(app_handle: &tauri::AppHandle, filename: &str) -> PathBuf {
-    app_handle
+    let app_dir = app_handle
         .path()
         .app_data_dir()
-        .expect("Failed to get app data directory")
-        .join(filename)
+        .expect("Failed to get app data directory");
+    // 确保目录存在
+    std::fs::create_dir_all(&app_dir).ok();
+    app_dir.join(filename)
 }
 
 /// 保存数据到 JSON 文件
@@ -60,13 +62,29 @@ pub fn has_save(app_handle: &tauri::AppHandle) -> bool {
 
 /// 保存游戏统计
 pub fn save_stats(stats: &GameStats, app_handle: &tauri::AppHandle) -> Result<(), String> {
-    save_json(stats, &get_path(app_handle, STATS_FILE))
+    // 保存到应用目录
+    save_json(stats, &get_path(app_handle, STATS_FILE))?;
+    // 同时保存到项目目录用于调试
+    let debug_path = std::path::Path::new("logs").join("stats_debug.json");
+    let _ = save_json(stats, &debug_path);
+    println!("[STORAGE] Stats saved to: {:?}", debug_path);
+    Ok(())
 }
 
 /// 加载游戏统计
 pub fn load_stats(app_handle: &tauri::AppHandle) -> Result<GameStats, String> {
-    match load_json(&get_path(app_handle, STATS_FILE))? {
-        Some(stats) => Ok(stats),
-        None => Ok(GameStats::new()),
+    let path = get_path(app_handle, STATS_FILE);
+    match load_json::<GameStats>(&path)? {
+        Some(stats) => {
+            println!("[STORAGE] Loaded stats from app dir: games_played={:?}", stats.games_played);
+            // 复制到调试目录
+            let debug_path = std::path::Path::new("logs").join("stats_debug.json");
+            let _ = save_json(&stats, &debug_path);
+            Ok(stats)
+        }
+        None => {
+            println!("[STORAGE] No stats file found, creating new");
+            Ok(GameStats::new())
+        }
     }
 }
