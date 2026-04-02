@@ -1193,7 +1193,7 @@
 					<div class="leaderboard-content">
 						{#if currentStats}
 							{@const entries = currentStats.leaderboards[selectedLeaderboardTab].entries}
-							{@const debugInfo = console.log('[Leaderboard] Rendering tab', selectedLeaderboardTab, 'entries:', entries.length) || ''}
+							{console.log('[Leaderboard] Rendering tab', selectedLeaderboardTab, 'entries:', entries.length)}
 							{#if entries.length === 0}
 								<div class="leaderboard-empty">
 									暂无记录，快去玩一局吧！
@@ -1513,6 +1513,8 @@
 		flex-shrink: 0;
 		min-width: 74px;
 		backdrop-filter: blur(8px);
+		max-height: calc(100vh - 140px);
+		overflow: hidden;
 	}
 
 	.side-foundation-label {
@@ -1528,11 +1530,14 @@
 		display: flex;
 		flex-direction: column;
 		gap: 6px;
+		max-height: calc(100vh - 200px);
+		overflow-y: auto;
 	}
 
 	.side-foundation {
 		width: 50px;
 		height: 70px;
+		min-height: 30px;
 		border-radius: 8px;
 		display: flex;
 		flex-direction: column;
@@ -2658,9 +2663,22 @@
 			gap: 4px;
 		}
 
+		.side-foundation-area {
+			max-height: calc(100vh - 140px);
+		}
+
+		.side-foundation-piles {
+			gap: 4px;
+			max-height: calc(100vh - 180px);
+		}
+
 		.side-foundation {
-			width: 40px;
-			height: 56px;
+			width: 38px;
+			height: 52px;
+		}
+
+		.side-foundation:not(.filled)::after {
+			font-size: 15px;
 		}
 
 		.stock-pile {
@@ -2787,11 +2805,21 @@
 		.side-foundation-area {
 			padding: 6px 4px;
 			min-width: 60px;
+			max-height: calc(100vh - 120px);
+		}
+
+		.side-foundation-piles {
+			gap: 3px;
+			max-height: calc(100vh - 160px);
 		}
 
 		.side-foundation {
-			width: 36px;
-			height: 50px;
+			width: 32px;
+			height: 44px;
+		}
+
+		.side-foundation:not(.filled)::after {
+			font-size: 14px;
 		}
 
 		.stock-pile {
@@ -2816,6 +2844,25 @@
 		.game-board {
 			padding: 2px;
 		}
+	}
+
+	/* 完成区滚动条样式 */
+	.side-foundation-piles::-webkit-scrollbar {
+		width: 4px;
+	}
+
+	.side-foundation-piles::-webkit-scrollbar-track {
+		background: rgba(0, 0, 0, 0.1);
+		border-radius: 2px;
+	}
+
+	.side-foundation-piles::-webkit-scrollbar-thumb {
+		background: rgba(255, 255, 255, 0.2);
+		border-radius: 2px;
+	}
+
+	.side-foundation-piles::-webkit-scrollbar-thumb:hover {
+		background: rgba(255, 255, 255, 0.3);
 	}
 
 	/* 减少动画偏好 - 对光敏用户友好 */
